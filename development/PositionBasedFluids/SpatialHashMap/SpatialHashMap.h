@@ -1,3 +1,5 @@
+/*Spatial Hashmap from "Optimized Spatial Hashing for Collision Detection of Deformable Objects" by Teschner et. al.*/
+
 #ifndef __SPATIAL_HASH_MAP_H
 #define __SPATIAL_HASH_MAP_H
 #include<vector>
