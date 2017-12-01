@@ -6,8 +6,10 @@ class AbstractKernel
 {
 public:
     AbstractKernel(float h);
-    virtual float execute(glm::vec3 r) = 0;
-    virtual glm::vec3 gradient(glm::vec3 r) = 0;
+    virtual float execute(float r) = 0;
+    virtual float derivation(float r) = 0;
+    virtual glm::vec3 grad1(const glm::vec3& x1,const glm::vec3& x2) = 0;
+    virtual glm::vec3 grad2(const glm::vec3& x1,const glm::vec3& x2) = 0;
 protected:
     float h;
 };

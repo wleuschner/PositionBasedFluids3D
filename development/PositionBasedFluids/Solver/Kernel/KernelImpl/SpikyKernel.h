@@ -2,10 +2,10 @@
 #define __POLY_6_KERNEL_H
 #include "../AbstractKernel.h"
 
-class Poly6Kernel : AbstractKernel
+class SpikyKernel : AbstractKernel
 {
 public:
-    Poly6Kernel(float h);
+    SpikyKernel(float h);
     float execute(float r);
     float derivation(float r);
     glm::vec3 grad1(const glm::vec3& x1,const glm::vec3& x2);

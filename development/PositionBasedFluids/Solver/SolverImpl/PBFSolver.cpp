@@ -93,7 +93,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         {
             for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
-                displacement[p] += (particles[p].lambda+n->lambda)*kernel->gradient(particles[p].pos-n->pos);
+                displacement[p] += (particles[p].lambda+n->lambda)*kernel->grad1(particles[p].pos,n->pos);
             }
             displacement[p] = (1.0f/restDensity)*displacement[p];
         }
@@ -114,7 +114,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         glm::vec3 velAccum(0.0f,0.0f,0.0f);
         for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
         {
-            velAccum += kernel->execute(n->vel-particles[p].vel);
+            velAccum += kernel->execute(glm::length(n->vel-particles[p].vel));
         }
         particles[p].vel += artVisc*velAccum;
 
