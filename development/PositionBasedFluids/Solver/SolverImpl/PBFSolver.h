@@ -23,6 +23,9 @@ private:
     float restDensity;
     float artVisc;
     float cfmRegularization;
+    float corrConst;
+    float corrDist;
+    float corrExp;
 
     std::vector<AbstractConstraint*> constraints;
     AbstractKernel* kernel;

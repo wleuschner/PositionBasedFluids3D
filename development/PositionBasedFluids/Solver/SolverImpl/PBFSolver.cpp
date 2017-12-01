@@ -93,7 +93,8 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         {
             for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
-                displacement[p] += (particles[p].lambda+n->lambda)*kernel->grad1(particles[p].pos,n->pos);
+                float sCorr = -corrConst*std::pow((kernel->execute(glm::length(particles[p].pos-n->pos))/kernel->execute(corrDist)),corrExp);
+                displacement[p] += (particles[p].lambda+n->lambda+sCorr)*kernel->grad1(particles[p].pos,n->pos);
             }
             displacement[p] = (1.0f/restDensity)*displacement[p];
         }
