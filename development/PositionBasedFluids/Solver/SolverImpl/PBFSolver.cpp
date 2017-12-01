@@ -45,7 +45,6 @@ void PBFSolver::solve(std::vector<Particle>& particles)
 {
     std::vector<std::list<Particle>> neighbors(particles.size());
     std::vector<glm::vec3> tempPos(particles.size());
-    std::vector<float> lambdas(particles.size());
     std::vector<glm::vec3> displacement(particles.size());
 
     //Apply external forces
@@ -85,7 +84,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         {
             for(std::vector<AbstractConstraint*>::iterator cit=constraints.begin();cit!=constraints.end();cit++)
             {
-                lambdas[p] = (*cit)->execute(particles[p],neighbors[p])/(*cit)->gradientSum(particles[p],neighbors[p]);
+                particles[p].lambda = (*cit)->execute(particles[p],neighbors[p])/((*cit)->gradientSum(particles[p],neighbors[p])+cfmRegularization);
             }
         }
 
@@ -94,7 +93,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         {
             for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
-                displacement[p] += (lambdas[p]+lambdas[n->index])*kernel->gradient(particles[p].pos-n->pos);
+                displacement[p] += (particles[p].lambda+n->lambda)*kernel->gradient(particles[p].pos-n->pos);
             }
             displacement[p] = (1.0f/restDensity)*displacement[p];
         }

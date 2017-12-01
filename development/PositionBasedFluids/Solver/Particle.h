@@ -8,6 +8,7 @@ public:
     unsigned int index;
     glm::vec3 pos;
     glm::vec3 vel;
+    float lambda;
     float mass;
     float density;
 };

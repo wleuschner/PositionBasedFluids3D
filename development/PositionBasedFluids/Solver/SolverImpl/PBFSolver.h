@@ -22,6 +22,7 @@ private:
     float kernelSupport;
     float restDensity;
     float artVisc;
+    float cfmRegularization;
 
     std::vector<AbstractConstraint*> constraints;
     AbstractKernel* kernel;
