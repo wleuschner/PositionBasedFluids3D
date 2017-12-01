@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.8)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
+#set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
@@ -21,7 +21,11 @@ set(SOURCE
    main.cpp
 )
 
-add_executable(${PROJECT_NAME} ${SOURCE} ${HEADERS} ${QT_HEADER_MOC} ${QT_HEADER_FORM})
+QT5_WRAP_UI(QT_HEADER_FORM GUI/MainWindow.ui)
+QT5_WRAP_CPP(QT_HEADER_MOC GUI/MainWindow.h)
+
+
+add_executable(${PROJECT_NAME} ${SOURCE} ${HEADERS} ${QT_HEADER_FORM} ${QT_HEADER_MOC})
 
 include_directories(${Qt5Widgets_INCLUDES})
 add_definitions(${Qt5Widgets_DEFINITIONS})

@@ -3,10 +3,6 @@
 #include<QMainWindow>
 #include"ui_MainWindow.h"
 
-/*namespace Ui {
-    MainWindow;
-}*/
-
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
