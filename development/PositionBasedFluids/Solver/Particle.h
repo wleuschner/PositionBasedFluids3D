@@ -5,6 +5,7 @@
 class Particle
 {
 public:
+    unsigned int index;
     glm::vec3 pos;
     glm::vec3 vel;
     float mass;

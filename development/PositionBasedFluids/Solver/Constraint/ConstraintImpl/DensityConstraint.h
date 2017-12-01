@@ -9,7 +9,7 @@ class DensityConstraint : AbstractConstraint
 public:
     DensityConstraint(AbstractKernel* kernel);
     float execute(const Particle& x,std::list<Particle> particles);
-    glm::vec3 gradient(const Particle& x,std::list<Particle> particles);
+    float gradientSum(const Particle& x,std::list<Particle> particles);
 private:
     float restDensity;
     AbstractKernel* kernel;

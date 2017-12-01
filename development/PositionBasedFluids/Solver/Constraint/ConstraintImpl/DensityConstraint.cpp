@@ -16,6 +16,20 @@ float DensityConstraint::execute(const Particle& x,std::list<Particle> particles
     return (density/restDensity)-1.0;
 }
 
-glm::vec3 DensityConstraint::gradient(const Particle& x,std::list<Particle> particles)
+float DensityConstraint::gradientSum(const Particle& x,std::list<Particle> particles)
 {
+    float result = 0.0;
+    glm::vec3 grad(0.0,0.0,0.0);
+    for(std::list<Particle>::iterator pit=particles.begin();pit!=particles.end();pit++)
+    {
+        grad += kernel->gradient(x.pos-pit->pos);
+    }
+    grad = (1.0f/restDensity)*grad;
+    result = glm::dot(grad,grad);
+    for(std::list<Particle>::iterator pit=particles.begin();pit!=particles.end();pit++)
+    {
+        grad = (1.0f/restDensity)*(-kernel->gradient(x.pos-pit->pos));
+        result += glm::dot(grad,grad);
+    }
+    return result;
 }

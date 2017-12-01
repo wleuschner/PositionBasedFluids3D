@@ -9,7 +9,7 @@ class AbstractConstraint
 public:
     AbstractConstraint();
     virtual float execute(const Particle& x,std::list<Particle> particles) = 0;
-    virtual glm::vec3 gradient(const Particle& x,std::list<Particle> particles) = 0;
+    virtual float gradientSum(const Particle& x,std::list<Particle> particles) = 0;
 private:
 };
 

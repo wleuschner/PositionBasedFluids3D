@@ -8,6 +8,10 @@ class AbstractSolver
 {
 public:
     AbstractSolver();
+
+    void setTimestep(float timestep);
+    float getTimestep();
+
     virtual void solve(std::vector<Particle>& particles) = 0;
 protected:
     std::vector<AbstractForce> externalForces;
