@@ -10,7 +10,6 @@ class MainWindow : public QMainWindow
 public:
     MainWindow();
 private:
-    QTimer updateTimer;
     Ui::MainWindow ui;
 };
 

@@ -5,6 +5,9 @@
 #include<glm/gtc/matrix_transform.hpp>
 #include<iostream>
 
+#include"../Solver/SolverImpl/PBFSolver.h"
+#include"../Solver/Kernel/KernelImpl/Poly6Kernel.h"
+
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
     format = QSurfaceFormat::defaultFormat();
@@ -12,6 +15,24 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     format.setMajorVersion(4);
     format.setMinorVersion(2);
     setFormat(format);
+
+    //connect(&updateTimer,SIGNAL(timeout()),this,SLOT(simulate()));
+    connect(&updateTimer,SIGNAL(timeout()),this,SLOT(update()));
+    updateTimer.setInterval(1000.0/60);
+    updateTimer.setSingleShot(false);
+    updateTimer.start();
+
+    Poly6Kernel* kernel = new Poly6Kernel(1.0);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)kernel,0.0018,8);
+    solver = (AbstractSolver*)pbf;
+}
+
+void GLCanvas::simulate()
+{
+    solver->solve(particles->getParticles());
+    particles->bind();
+    particles->upload();
+    //update();
 }
 
 void GLCanvas::initializeGL()
@@ -61,17 +82,6 @@ void GLCanvas::initializeGL()
     test.push_back(a2);
     test.push_back(a3);
 
-    std::vector<Particle> pTest;
-    pTest.push_back(Particle(glm::vec3(0.0,0.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(-2.0,0.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(+2.0,0.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(0.0,2.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(-2.0,2.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(+2.0,2.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(0.0,-2.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(-2.0,-2.0,0.0)));
-    pTest.push_back(Particle(glm::vec3(+2.0,-2.0,0.0)));
-
     std::cout<<sizeof(Vertex)<<std::endl;
     vbo = new VertexBuffer();
     vbo->bind();
@@ -84,7 +94,28 @@ void GLCanvas::initializeGL()
 
     particles = new ParticleBuffer();
     particles->bind();
-    particles->upload(pTest);
+    unsigned int cc = 0;
+    for( int z=-10;z!=10;z++)
+    {
+        for( int y=-10;y!=10;y++)
+        {
+            for( int x=-10;x!=10;x++)
+            {
+                particles->addParticle(Particle(cc,glm::vec3(x/2.0,y/2.0,z/2.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                cc++;
+            }
+        }
+    }
+/*    particles->addParticle(Particle(glm::vec3(0.0,0.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(-2.0,0.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(+2.0,0.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(0.0,2.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(-2.0,2.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(+2.0,2.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(0.0,-2.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(-2.0,-2.0,0.0)));
+    particles->addParticle(Particle(glm::vec3(+2.0,-2.0,0.0)));*/
+    particles->upload();
 
     glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)sizeof(unsigned int));
     glEnableVertexAttribArray(2);
@@ -92,6 +123,9 @@ void GLCanvas::initializeGL()
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(2,1);
+
+    solver->init(particles->getParticles());
+
 }
 
 void GLCanvas::paintGL()
@@ -104,7 +138,7 @@ void GLCanvas::paintGL()
     program->uploadMat4("pvm",pvm);
     program->uploadMat3("normalMatrix",normalMatrix);
     vbo->bind();
-    glDrawArraysInstanced(GL_TRIANGLES,0,3,9);
+    glDrawArraysInstanced(GL_TRIANGLES,0,3,particles->getNumParticles());
 }
 
 void GLCanvas::resizeGL(int w, int h)
@@ -115,10 +149,12 @@ void GLCanvas::resizeGL(int w, int h)
 
 void GLCanvas::mousePressEvent(QMouseEvent *event)
 {
-    std::cout<<"MOUSEPRESS"<<std::endl;
     switch(event->button())
     {
     case Qt::LeftButton:
+        particles->addParticle(Particle(camera.getPosition()));
+        particles->bind();
+        particles->upload();
         break;
     case Qt::MiddleButton:
         mouseCoords = event->pos();
@@ -130,7 +166,6 @@ void GLCanvas::mousePressEvent(QMouseEvent *event)
 
 void GLCanvas::mouseMoveEvent(QMouseEvent *event)
 {
-    std::cout<<"MOUSEMOVE"<<std::endl;
     switch(event->buttons())
     {
     case Qt::LeftButton:
@@ -152,7 +187,6 @@ void GLCanvas::mouseReleaseEvent(QMouseEvent *event)
 
 void GLCanvas::keyPressEvent(QKeyEvent *event)
 {
-    std::cout<<"KEYPRESS"<<std::endl;
     switch(event->key())
     {
     case Qt::Key_W:
@@ -184,6 +218,13 @@ void GLCanvas::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Down:
         camera.rotate(-0.1,camera.getStrafeVec());
+        break;
+    case Qt::Key_Space:
+        /*if(!updateTimer.isActive())
+            updateTimer.start();
+        else
+            updateTimer.stop();*/
+        simulate();
         break;
     }
 }

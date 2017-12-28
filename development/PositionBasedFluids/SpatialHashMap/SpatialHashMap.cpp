@@ -4,7 +4,7 @@ SpatialHashMap3D::SpatialHashMap3D(unsigned int size,float cellSize)
 {
     this->size = size;
     this->cellSize = cellSize;
-    buckets.reserve(size);
+    buckets.resize(size);
 }
 
 void SpatialHashMap3D::insert(const Particle& p)

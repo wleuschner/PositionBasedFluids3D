@@ -6,7 +6,7 @@ class AbstractForce
 {
 public:
     AbstractForce();
-    virtual glm::vec3 execute(glm::vec3 pos) = 0;
+    virtual glm::vec3 execute(const glm::vec3& pos) = 0;
 private:
 };
 

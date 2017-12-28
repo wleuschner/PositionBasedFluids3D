@@ -11,7 +11,22 @@ void ParticleBuffer::bind()
     glBindBuffer(GL_ARRAY_BUFFER,id);
 }
 
-void ParticleBuffer::upload(const std::vector<Particle>& vertices)
+void ParticleBuffer::addParticle(Particle particle)
 {
-    glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(Particle),(void*)vertices.data(),GL_STREAM_DRAW);
+    particles.push_back(particle);
+}
+
+void ParticleBuffer::upload()
+{
+    glBufferData(GL_ARRAY_BUFFER,particles.size()*sizeof(Particle),(void*)particles.data(),GL_DYNAMIC_DRAW);
+}
+
+unsigned int ParticleBuffer::getNumParticles()
+{
+    return particles.size();
+}
+
+std::vector<Particle>& ParticleBuffer::getParticles()
+{
+    return particles;
 }

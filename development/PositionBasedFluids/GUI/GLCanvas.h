@@ -1,4 +1,5 @@
 #include<GL/glew.h>
+#include<QTimer>
 #include<QOpenGLWidget>
 #include<glm/glm.hpp>
 #include"../Graphics/Shader/Shader.h"
@@ -6,6 +7,7 @@
 #include"../Graphics/VertexBuffer/VertexBuffer.h"
 #include"../Graphics/ParticleBuffer/ParticleBuffer.h"
 #include"../Graphics/Camera/Camera.h"
+#include"../Solver/AbstractSolver.h"
 
 class GLCanvas : public QOpenGLWidget
 {
@@ -21,8 +23,14 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event);
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
+protected slots:
+    void simulate();
 private:
+    QTimer simulationTimer;
+    QTimer updateTimer;
     QPoint mouseCoords;
+
+    AbstractSolver* solver;
 
     QSurfaceFormat format;
     Camera camera;

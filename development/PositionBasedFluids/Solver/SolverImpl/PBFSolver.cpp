@@ -1,4 +1,6 @@
 #include"PBFSolver.h"
+#include"../Constraint/ConstraintImpl/DensityConstraint.h"
+#include"../Force/ForceImpl/GravityForce.h"
 #include<list>
 
 PBFSolver::PBFSolver(AbstractKernel* kernel,float timestep) : AbstractSolver()
@@ -6,29 +8,57 @@ PBFSolver::PBFSolver(AbstractKernel* kernel,float timestep) : AbstractSolver()
     this->iterations = 10;
     this->kernel = kernel;
     this->timestep = timestep;
+    this->spatialHashMap = new SpatialHashMap3D(50000,kernel->getRadius());
+    DensityConstraint* ds = new DensityConstraint(kernel);
+    this->constraints.push_back((AbstractConstraint*)ds);
+    GravityForce* grav = new GravityForce();
+    this->externalForces.push_back((AbstractForce*)grav);
+    this->cfmRegularization = 0.01;
+    this->kernelSupport=kernel->getRadius();
 }
 
-PBFSolver::PBFSolver(AbstractKernel* kernel,float timestep,int iterations)
+PBFSolver::PBFSolver(AbstractKernel* kernel,float timestep,int iterations) : AbstractSolver()
 {
     this->iterations = iterations;
     this->kernel = kernel;
     this->timestep = timestep;
+    this->spatialHashMap = new SpatialHashMap3D(50000,kernel->getRadius());
+    DensityConstraint* ds = new DensityConstraint(kernel);
+    this->constraints.push_back((AbstractConstraint*)ds);
+    GravityForce* grav = new GravityForce();
+    this->externalForces.push_back((AbstractForce*)grav);
+    this->cfmRegularization = 0.01;
+    this->kernelSupport=kernel->getRadius();
 }
 
-PBFSolver::PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep)
+PBFSolver::PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep) : AbstractSolver()
 {
     this->iterations = 10;
     this->kernel = kernel;
     this->timestep = timestep;
     this->constraints = constraints;
+    this->spatialHashMap = new SpatialHashMap3D(50000,kernel->getRadius());
+    DensityConstraint* ds = new DensityConstraint(kernel);
+    this->constraints.push_back((AbstractConstraint*)ds);
+    GravityForce* grav = new GravityForce();
+    this->externalForces.push_back((AbstractForce*)grav);
+    this->cfmRegularization = 0.01;
+    this->kernelSupport=kernel->getRadius();
 }
 
-PBFSolver::PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations)
+PBFSolver::PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver()
 {
     this->iterations = iterations;
     this->kernel = kernel;
     this->timestep = timestep;
     this->constraints = constraints;
+    this->spatialHashMap = new SpatialHashMap3D(50000,kernel->getRadius());
+    DensityConstraint* ds = new DensityConstraint(kernel);
+    this->constraints.push_back((AbstractConstraint*)ds);
+    GravityForce* grav = new GravityForce();
+    this->externalForces.push_back((AbstractForce*)grav);
+    this->cfmRegularization = 0.01;
+    this->kernelSupport=kernel->getRadius();
 }
 
 void PBFSolver::setNumIterations(unsigned int iterations)
@@ -41,6 +71,14 @@ int PBFSolver::getNumIterations()
     return iterations;
 }
 
+void PBFSolver::init(std::vector<Particle>& particles)
+{
+    for(unsigned int p=0;p<particles.size();p++)
+    {
+        this->spatialHashMap->insert(particles[p]);
+    }
+}
+
 void PBFSolver::solve(std::vector<Particle>& particles)
 {
     std::vector<std::list<Particle>> neighbors(particles.size());
@@ -51,12 +89,12 @@ void PBFSolver::solve(std::vector<Particle>& particles)
     for(unsigned int p=0;p<particles.size();p++)
     {
         glm::vec3 accForces = glm::vec3(0.0,0.0,0.0);
-        for(std::vector<AbstractForce>::iterator f = externalForces.begin();f!=externalForces.end();f++)
+        for(std::vector<AbstractForce*>::iterator f = externalForces.begin();f!=externalForces.end();f++)
         {
-            accForces += f->execute(particles[p].pos);
+            accForces += (*f)->execute(particles[p].pos);
         }
         particles[p].vel += timestep*accForces;
-        tempPos[p]       += timestep*particles[p].vel;
+        tempPos[p]        = particles[p].pos + timestep*particles[p].vel;
     }
 
     //Neighbor search
@@ -96,7 +134,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
                 float sCorr = -corrConst*std::pow((kernel->execute(glm::length(particles[p].pos-n->pos))/kernel->execute(corrDist)),corrExp);
                 displacement[p] += (particles[p].lambda+n->lambda+sCorr)*kernel->grad1(particles[p].pos,n->pos);
             }
-            displacement[p] = (1.0f/restDensity)*displacement[p];
+            displacement[p] = (1.0f/10.0f)*displacement[p];
         }
 
         //Update Temporary Particle Positions

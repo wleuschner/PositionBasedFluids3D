@@ -8,8 +8,8 @@ class AbstractConstraint
 {
 public:
     AbstractConstraint();
-    virtual float execute(const Particle& x,std::list<Particle> particles) = 0;
-    virtual float gradientSum(const Particle& x,std::list<Particle> particles) = 0;
+    virtual float execute(const Particle& x,const std::list<Particle>& particles) = 0;
+    virtual float gradientSum(const Particle& x,const std::list<Particle>& particles) = 0;
 private:
 };
 

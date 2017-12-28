@@ -16,6 +16,7 @@ public:
     void setNumIterations(unsigned int iterations);
     int getNumIterations();
 
+    void init(std::vector<Particle>& particles);
     void solve(std::vector<Particle>& particles);
 private:
     unsigned int iterations;
