@@ -6,6 +6,9 @@ add_subdirectory("VertexBuffer")
 add_subdirectory("IndexBuffer")
 add_subdirectory("Light")
 add_subdirectory("Vertex")
+add_subdirectory("ParticleBuffer")
+add_subdirectory("Camera")
+
 
 set(HEADERS
    ${HEADERS}

@@ -1,4 +1,6 @@
 #include"GLCanvas.h"
+#include<QKeyEvent>
+#include<QMouseEvent>
 
 #include<glm/gtc/matrix_transform.hpp>
 #include<iostream>
@@ -59,13 +61,16 @@ void GLCanvas::initializeGL()
     test.push_back(a2);
     test.push_back(a3);
 
-    std::vector<glm::vec3> pTest;
-    pTest.push_back(glm::vec3(0.0,0.0,0.0));
-    pTest.push_back(glm::vec3(-2.0,0.0,0.0));
-    pTest.push_back(glm::vec3(+2.0,0.0,0.0));
-    pTest.push_back(glm::vec3(0.0,2.0,0.0));
-    pTest.push_back(glm::vec3(-2.0,2.0,0.0));
-    pTest.push_back(glm::vec3(+2.0,2.0,0.0));
+    std::vector<Particle> pTest;
+    pTest.push_back(Particle(glm::vec3(0.0,0.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(-2.0,0.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(+2.0,0.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(0.0,2.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(-2.0,2.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(+2.0,2.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(0.0,-2.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(-2.0,-2.0,0.0)));
+    pTest.push_back(Particle(glm::vec3(+2.0,-2.0,0.0)));
 
     std::cout<<sizeof(Vertex)<<std::endl;
     vbo = new VertexBuffer();
@@ -76,11 +81,12 @@ void GLCanvas::initializeGL()
     Vertex::setVertexAttribs();
     Vertex::enableVertexAttribs();
 
-    glGenBuffers(1,&particles);
-    glBindBuffer(GL_ARRAY_BUFFER,particles);
-    glBufferData(GL_ARRAY_BUFFER,pTest.size()*sizeof(glm::vec3),(void*)pTest.data(),GL_STREAM_DRAW);
 
-    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,12,(void*)0);
+    particles = new ParticleBuffer();
+    particles->bind();
+    particles->upload(pTest);
+
+    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)sizeof(unsigned int));
     glEnableVertexAttribArray(2);
 
     glVertexAttribDivisor(0,0);
@@ -92,12 +98,13 @@ void GLCanvas::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     program->bind();
+    view = camera.getView();
     glm::mat4 pvm = projection*view*model;
     glm::mat4 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view*model)));
     program->uploadMat4("pvm",pvm);
     program->uploadMat3("normalMatrix",normalMatrix);
     vbo->bind();
-    glDrawArraysInstanced(GL_TRIANGLES,0,3,6);
+    glDrawArraysInstanced(GL_TRIANGLES,0,3,9);
 }
 
 void GLCanvas::resizeGL(int w, int h)
@@ -105,3 +112,84 @@ void GLCanvas::resizeGL(int w, int h)
     glViewport(0,0,w,h);
     projection = glm::perspectiveFov(45.0f,(float)w,(float)h,0.1f,100.0f);
 }
+
+void GLCanvas::mousePressEvent(QMouseEvent *event)
+{
+    std::cout<<"MOUSEPRESS"<<std::endl;
+    switch(event->button())
+    {
+    case Qt::LeftButton:
+        break;
+    case Qt::MiddleButton:
+        mouseCoords = event->pos();
+        break;
+    case Qt::RightButton:
+        break;
+    }
+}
+
+void GLCanvas::mouseMoveEvent(QMouseEvent *event)
+{
+    std::cout<<"MOUSEMOVE"<<std::endl;
+    switch(event->buttons())
+    {
+    case Qt::LeftButton:
+        break;
+    case Qt::MiddleButton:
+        camera.rotate(0.01*(event->pos().x()-mouseCoords.x()),camera.getUpVector());
+        camera.rotate(0.01*(event->pos().y()-mouseCoords.y()),camera.getStrafeVec());
+        mouseCoords = event->pos();
+        break;
+    case Qt::RightButton:
+        break;
+    }
+}
+
+void GLCanvas::mouseReleaseEvent(QMouseEvent *event)
+{
+    std::cout<<"MOUSERELEASE"<<std::endl;
+}
+
+void GLCanvas::keyPressEvent(QKeyEvent *event)
+{
+    std::cout<<"KEYPRESS"<<std::endl;
+    switch(event->key())
+    {
+    case Qt::Key_W:
+        camera.translate(camera.getForwardVec());
+        break;
+    case Qt::Key_S:
+        camera.translate(-camera.getForwardVec());
+        break;
+    case Qt::Key_D:
+        camera.translate(camera.getStrafeVec());
+        break;
+    case Qt::Key_A:
+        camera.translate(-camera.getStrafeVec());
+        break;
+    case Qt::Key_PageUp:
+        camera.translate(camera.getUpVector());
+        break;
+    case Qt::Key_PageDown:
+        camera.translate(-camera.getUpVector());
+        break;
+    case Qt::Key_Left:
+        camera.rotate(0.1,camera.getUpVector());
+        break;
+    case Qt::Key_Right:
+        camera.rotate(-0.1,camera.getUpVector());
+        break;
+    case Qt::Key_Up:
+        camera.rotate(0.1,camera.getStrafeVec());
+        break;
+    case Qt::Key_Down:
+        camera.rotate(-0.1,camera.getStrafeVec());
+        break;
+    }
+}
+
+void GLCanvas::keyReleaseEvent(QKeyEvent *event)
+{
+    std::cout<<"KEYRELEASE"<<std::endl;
+}
+

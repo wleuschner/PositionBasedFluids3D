@@ -1,6 +1,7 @@
 #ifndef __MAINWINDOW_H
 #define __MAINWINDOW_H
 #include<QMainWindow>
+#include<QTimer>
 #include"ui_MainWindow.h"
 
 class MainWindow : public QMainWindow
@@ -9,6 +10,7 @@ class MainWindow : public QMainWindow
 public:
     MainWindow();
 private:
+    QTimer updateTimer;
     Ui::MainWindow ui;
 };
 
