@@ -15,6 +15,8 @@ find_package(Qt5OpenGL)
 add_subdirectory("Solver")
 add_subdirectory("SpatialHashMap")
 add_subdirectory("GUI")
+add_subdirectory("Graphics")
+
 
 set(SOURCE
    ${SOURCE}
@@ -27,8 +29,19 @@ QT5_WRAP_CPP(QT_HEADER_MOC GUI/MainWindow.h GUI/GLCanvas.h)
 
 add_executable(${PROJECT_NAME} ${SOURCE} ${HEADERS} ${QT_HEADER_FORM} ${QT_HEADER_MOC})
 
+
 include_directories(${Qt5Widgets_INCLUDES})
 add_definitions(${Qt5Widgets_DEFINITIONS})
+find_package (GLEW REQUIRED)
 find_package(OpenGL)
 qt5_use_modules(${PROJECT_NAME} Widgets OpenGL Core Gui)
-target_link_libraries(${PROJECT_NAME} ${OPENGL_gl_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES})
+
+set (source ${CMAKE_SOURCE_DIR}/Resources)
+set (destination ${CMAKE_CURRENT_BINARY_DIR}/Resources)
+add_custom_command(
+ TARGET ${PROJECT_NAME} POST_BUILD
+ COMMAND ${CMAKE_COMMAND} -E create_symlink ${source} ${destination}
+ DEPENDS ${destination}
+ COMMENT "symbolic link resources folder from ${source} => ${destination}"
+)

@@ -8,6 +8,7 @@ set(SOURCE
 
 set(HEADERS
    ${HEADERS}
+   ${CMAKE_CURRENT_SOURCE_DIR}/MainWindow.h
    ${CMAKE_CURRENT_SOURCE_DIR}/GLCanvas.h
    PARENT_SCOPE
 )
