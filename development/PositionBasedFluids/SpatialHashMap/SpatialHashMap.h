@@ -13,6 +13,7 @@ public:
 
     void insert(const Particle& p);
     std::list<Particle> find(const Particle &p);
+    void clear();
 
 private:
     unsigned int size;

@@ -22,8 +22,8 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     updateTimer.setSingleShot(false);
     updateTimer.start();
 
-    Poly6Kernel* kernel = new Poly6Kernel(1.0);
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)kernel,0.0018,8);
+    Poly6Kernel* kernel = new Poly6Kernel(0.3);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)kernel,0.1,8);
     solver = (AbstractSolver*)pbf;
 }
 
@@ -95,26 +95,17 @@ void GLCanvas::initializeGL()
     particles = new ParticleBuffer();
     particles->bind();
     unsigned int cc = 0;
-    for( int z=-10;z!=10;z++)
+    for( int z=-8;z!=8;z++)
     {
-        for( int y=-10;y!=10;y++)
+        for( int y=-8;y!=8;y++)
         {
-            for( int x=-10;x!=10;x++)
+            for( int x=-8;x!=8;x++)
             {
                 particles->addParticle(Particle(cc,glm::vec3(x/2.0,y/2.0,z/2.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;
             }
         }
     }
-/*    particles->addParticle(Particle(glm::vec3(0.0,0.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(-2.0,0.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(+2.0,0.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(0.0,2.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(-2.0,2.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(+2.0,2.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(0.0,-2.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(-2.0,-2.0,0.0)));
-    particles->addParticle(Particle(glm::vec3(+2.0,-2.0,0.0)));*/
     particles->upload();
 
     glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)sizeof(unsigned int));
@@ -124,7 +115,7 @@ void GLCanvas::initializeGL()
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(2,1);
 
-    solver->init(particles->getParticles());
+    //solver->init(particles->getParticles());
 
 }
 

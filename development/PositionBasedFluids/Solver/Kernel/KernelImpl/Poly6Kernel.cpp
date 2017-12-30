@@ -8,11 +8,19 @@ Poly6Kernel::Poly6Kernel(float h) : AbstractKernel(h)
 
 float Poly6Kernel::execute(float r)
 {
+    if(r>h)
+    {
+        return 0;
+    }
     return (315.0/(64*M_1_PI*std::pow(h,9)))*std::pow((h*h-r*r),3);
 }
 
 float Poly6Kernel::derivation(float r)
 {
+    if(r>h)
+    {
+        return 0;
+    }
     return -((945*r*std::pow((h*h-r*r),2))/(32*M_1_PI*std::pow(h,9)));
 }
 
