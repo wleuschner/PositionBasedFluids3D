@@ -7,7 +7,7 @@
 class DensityConstraint : AbstractConstraint
 {
 public:
-    DensityConstraint(AbstractKernel* kernel);
+    DensityConstraint(AbstractKernel* kernel,float restDensity);
     float execute(const Particle& x,const std::list<Particle>& particles);
     float gradientSum(const Particle& x,const std::list<Particle>& particles);
 private:

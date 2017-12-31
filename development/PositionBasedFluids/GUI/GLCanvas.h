@@ -26,6 +26,7 @@ protected:
 protected slots:
     void simulate();
 private:
+    bool running;
     QTimer simulationTimer;
     QTimer updateTimer;
     QPoint mouseCoords;

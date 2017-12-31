@@ -1,9 +1,9 @@
 #include"DensityConstraint.h"
 
-DensityConstraint::DensityConstraint(AbstractKernel* kernel)
+DensityConstraint::DensityConstraint(AbstractKernel* kernel,float restDensity)
 {
     this->kernel = kernel;
-    this->restDensity = 10.0;
+    this->restDensity = restDensity;
 }
 
 float DensityConstraint::execute(const Particle& x,const std::list<Particle>& particles)
@@ -28,7 +28,7 @@ float DensityConstraint::gradientSum(const Particle& x,const std::list<Particle>
     result = glm::dot(grad,grad);
     for(std::list<Particle>::const_iterator pit=particles.begin();pit!=particles.end();pit++)
     {
-        grad = (1.0f/restDensity)*(-kernel->grad2(x.pos,pit->pos));
+        grad = (1.0f/restDensity)*(kernel->grad1(x.pos,pit->pos));
         result += glm::dot(grad,grad);
     }
     return result;

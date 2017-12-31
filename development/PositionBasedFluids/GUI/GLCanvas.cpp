@@ -10,29 +10,33 @@
 
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
+    running = false;
     format = QSurfaceFormat::defaultFormat();
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setMajorVersion(4);
     format.setMinorVersion(2);
     setFormat(format);
 
-    //connect(&updateTimer,SIGNAL(timeout()),this,SLOT(simulate()));
-    connect(&updateTimer,SIGNAL(timeout()),this,SLOT(update()));
-    updateTimer.setInterval(1000.0/60);
+    connect(&updateTimer,SIGNAL(timeout()),this,SLOT(simulate()));
+    //connect(&updateTimer,SIGNAL(timeout()),this,SLOT(update()));
+    updateTimer.setInterval(1000.0/30);
     updateTimer.setSingleShot(false);
     updateTimer.start();
 
-    Poly6Kernel* kernel = new Poly6Kernel(0.3);
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)kernel,0.1,8);
+    Poly6Kernel* kernel = new Poly6Kernel(0.1);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)kernel,0.0083,4);
     solver = (AbstractSolver*)pbf;
 }
 
 void GLCanvas::simulate()
 {
-    solver->solve(particles->getParticles());
-    particles->bind();
-    particles->upload();
-    //update();
+    if(running)
+    {
+        solver->solve(particles->getParticles());
+        particles->bind();
+        particles->upload();
+    }
+    update();
 }
 
 void GLCanvas::initializeGL()
@@ -95,13 +99,15 @@ void GLCanvas::initializeGL()
     particles = new ParticleBuffer();
     particles->bind();
     unsigned int cc = 0;
-    for( int z=-8;z!=8;z++)
+    for( int z=-2;z!=3;z++)
     {
-        for( int y=-8;y!=8;y++)
+        for( int y=-2;y!=3;y++)
         {
-            for( int x=-8;x!=8;x++)
+            for( int x=-2;x!=3;x++)
             {
-                particles->addParticle(Particle(cc,glm::vec3(x/2.0,y/2.0,z/2.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                particles->addParticle(Particle(cc,glm::vec3(x/20.0-10,y/20.0,z/20.0+10),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                cc++;
+                particles->addParticle(Particle(cc,glm::vec3(x/20.0+10,y/20.0,z/20.0-10),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;
             }
         }
@@ -211,11 +217,11 @@ void GLCanvas::keyPressEvent(QKeyEvent *event)
         camera.rotate(-0.1,camera.getStrafeVec());
         break;
     case Qt::Key_Space:
-        /*if(!updateTimer.isActive())
-            updateTimer.start();
+        if(!running)
+            running = true;
         else
-            updateTimer.stop();*/
-        simulate();
+            running = false;
+        //simulate();
         break;
     }
 }

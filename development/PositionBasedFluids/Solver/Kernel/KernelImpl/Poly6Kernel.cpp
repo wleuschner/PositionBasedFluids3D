@@ -26,14 +26,35 @@ float Poly6Kernel::derivation(float r)
 
 glm::vec3 Poly6Kernel::grad1(const glm::vec3& x1,const glm::vec3& x2)
 {
-    return glm::vec3(-(945*(x1.x-x2.x)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)),
+    if(glm::length(x1-x2)>h)
+    {
+        return glm::vec3(0.0,0.0,0.0);
+    }
+    /*return glm::vec3(-(945*(x1.x-x2.x)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)),
                      -(945*(x1.y-x2.y)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)),
                      -(945*(x1.z-x2.z)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)));
+*/
+    /*return glm::vec3(-(1890*(x1.x-x2.x)*std::pow((+std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)-h*h),2))/(M_1_PI*std::pow(h,9)),
+                     -(1890*(x1.y-x2.y)*std::pow((+std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)-h*h),2))/(M_1_PI*std::pow(h,9)),
+                     -(1890*(x1.z-x2.z)*std::pow((+std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)-h*h),2))/(M_1_PI*std::pow(h,9)));*/
+
+
+    return -((float)(-45.0f/(M_1_PI*(std::pow(h,6))))*((float)std::pow((h-glm::length(x1-x2)),2))*glm::normalize(x2-x1));
 }
 
 glm::vec3 Poly6Kernel::grad2(const glm::vec3& x1,const glm::vec3& x2)
 {
-    return glm::vec3(-(945*(x2.x-x1.x)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)),
+    if(glm::length(x1-x2)>h)
+    {
+        return glm::vec3(0.0,0.0,0.0);
+    }
+/*    return glm::vec3(-(945*(x2.x-x1.x)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)),
                      -(945*(x2.y-x1.y)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)),
                      -(945*(x2.z-x1.z)*std::pow((-std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)+h*h),2))/(32*M_1_PI*std::pow(h,9)));
+    */
+    /*return -glm::vec3(-(1890*(x1.x-x2.x)*std::pow((+std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)-h*h),2))/(M_1_PI*std::pow(h,9)),
+                     -(1890*(x1.y-x2.y)*std::pow((+std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)-h*h),2))/(M_1_PI*std::pow(h,9)),
+                     -(1890*(x1.z-x2.z)*std::pow((+std::pow((x2.x-x1.x),2)+std::pow((x2.y-x1.y),2)+std::pow((x2.z-x1.z),2)-h*h),2))/(M_1_PI*std::pow(h,9)));*/
+
+    return ((float)(-45.0f/(M_1_PI*(std::pow(h,6))))*((float)std::pow((h-glm::length(x1-x2)),2))*glm::normalize(x2-x1));
 }
