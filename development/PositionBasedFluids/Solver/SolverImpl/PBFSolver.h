@@ -8,10 +8,8 @@
 class PBFSolver : AbstractSolver
 {
 public:
-    PBFSolver(AbstractKernel* kernel,float timestep);
-    PBFSolver(AbstractKernel* kernel,float timestep,int iterations);
-    PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep);
-    PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations);
+    PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations=4);
+    PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations=4);
 
     void setNumIterations(unsigned int iterations);
     int getNumIterations();
@@ -29,7 +27,9 @@ private:
     float corrExp;
 
     std::vector<AbstractConstraint*> constraints;
-    AbstractKernel* kernel;
+    AbstractKernel* densityKernel;
+    AbstractKernel* gradKernel;
+    AbstractKernel* viscKernel;
     SpatialHashMap3D* spatialHashMap;
 };
 

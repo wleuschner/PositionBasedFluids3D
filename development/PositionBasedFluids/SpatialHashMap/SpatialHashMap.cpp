@@ -12,13 +12,13 @@ void SpatialHashMap3D::insert(const Particle& p)
     unsigned int c = (((unsigned int)(std::floor(p.pos.x/cellSize)*73856093))^
                       ((unsigned int)(std::floor(p.pos.y/cellSize)*19349663))^
                       ((unsigned int)(std::floor(p.pos.z/cellSize)*83492791))) % size;
-    buckets[c].push_back(p);
+    buckets[c].push_back(p.index);
 }
 
-std::list<Particle> SpatialHashMap3D::find(const Particle &p)
+std::list<unsigned int> SpatialHashMap3D::find(const Particle &p)
 {
-    std::list<Particle> nList;
-    std::list<Particle> bucket;
+    std::list<unsigned int> nList;
+    std::list<unsigned int> bucket;
     unsigned int c = 0;
 
     //Bottom Layer
@@ -174,5 +174,6 @@ void SpatialHashMap3D::clear()
 {
     buckets.clear();
     buckets.resize(size);
+
 
 }

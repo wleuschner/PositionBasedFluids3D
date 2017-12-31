@@ -4,33 +4,17 @@
 #include<list>
 #include<iostream>
 
-PBFSolver::PBFSolver(AbstractKernel* kernel,float timestep) : AbstractSolver()
+PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver()
 {
-    this->restDensity = 1000.0f;
-    this->iterations = 10;
-    this->kernel = kernel;
-    this->timestep = timestep;
-    this->spatialHashMap = new SpatialHashMap3D(50000,2*kernel->getRadius());
-    DensityConstraint* ds = new DensityConstraint(kernel,this->restDensity);
-    this->constraints.push_back((AbstractConstraint*)ds);
-    GravityForce* grav = new GravityForce();
-    this->externalForces.push_back((AbstractForce*)grav);
-    this->cfmRegularization = 1.0;
-    this->artVisc = 0.01;
-    this->corrConst = 0.1;
-    this->corrExp = 4;
-    this->corrDist = 0.1*kernel->getRadius();
-    this->kernelSupport=kernel->getRadius();
-}
-
-PBFSolver::PBFSolver(AbstractKernel* kernel,float timestep,int iterations) : AbstractSolver()
-{
-    this->restDensity = 4000.0f;
+    //this->restDensity = 100.0f;
+    this->restDensity = 3500.0f;
     this->iterations = iterations;
-    this->kernel = kernel;
+    this->densityKernel = densityKernel;
+    this->gradKernel = gradKernel;
+    this->viscKernel = viscKernel;
     this->timestep = timestep;
-    this->spatialHashMap = new SpatialHashMap3D(50000,2*kernel->getRadius());
-    DensityConstraint* ds = new DensityConstraint(kernel,this->restDensity);
+    this->spatialHashMap = new SpatialHashMap3D(50000,2*densityKernel->getRadius());
+    DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
     GravityForce* grav = new GravityForce();
     this->externalForces.push_back((AbstractForce*)grav);
@@ -38,39 +22,21 @@ PBFSolver::PBFSolver(AbstractKernel* kernel,float timestep,int iterations) : Abs
     this->artVisc = 0.01;
     this->corrConst = 0.0001;
     this->corrExp = 4;
-    this->corrDist = 0.03*kernel->getRadius();
-    this->kernelSupport=kernel->getRadius();
+    this->corrDist = 0.3*densityKernel->getRadius();
+    this->kernelSupport=densityKernel->getRadius();
 }
 
-PBFSolver::PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep) : AbstractSolver()
-{
-    this->restDensity = 4000.0f;
-    this->iterations = 10;
-    this->kernel = kernel;
-    this->timestep = timestep;
-    this->constraints = constraints;
-    this->spatialHashMap = new SpatialHashMap3D(50000,2*kernel->getRadius());
-    DensityConstraint* ds = new DensityConstraint(kernel,this->restDensity);
-    this->constraints.push_back((AbstractConstraint*)ds);
-    GravityForce* grav = new GravityForce();
-    this->externalForces.push_back((AbstractForce*)grav);
-    this->cfmRegularization = 1.0;
-    this->artVisc = 0.01;
-    this->corrConst = 0.1;
-    this->corrExp = 4;
-    this->corrDist = 0.1*kernel->getRadius();
-    this->kernelSupport=kernel->getRadius();
-}
-
-PBFSolver::PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver()
+PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver()
 {
     this->restDensity = 10.0f;
     this->iterations = iterations;
-    this->kernel = kernel;
+    this->densityKernel = densityKernel;
+    this->gradKernel = gradKernel;
+    this->viscKernel = viscKernel;
     this->timestep = timestep;
     this->constraints = constraints;
-    this->spatialHashMap = new SpatialHashMap3D(50000,2*kernel->getRadius());
-    DensityConstraint* ds = new DensityConstraint(kernel,this->restDensity);
+    this->spatialHashMap = new SpatialHashMap3D(50000,2*densityKernel->getRadius());
+    DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
     GravityForce* grav = new GravityForce();
     this->externalForces.push_back((AbstractForce*)grav);
@@ -78,8 +44,8 @@ PBFSolver::PBFSolver(AbstractKernel* kernel,std::vector<AbstractConstraint*> con
     this->artVisc = 0.01;
     this->corrConst = 0.1;
     this->corrExp = 4;
-    this->corrDist = 0.1*kernel->getRadius();
-    this->kernelSupport=kernel->getRadius();
+    this->corrDist = 0.1*densityKernel->getRadius();
+    this->kernelSupport=densityKernel->getRadius();
 }
 
 void PBFSolver::setNumIterations(unsigned int iterations)
@@ -124,14 +90,15 @@ void PBFSolver::solve(std::vector<Particle>& particles)
     #pragma omp parallel for
     for(unsigned int p=0;p<particles.size();p++)
     {
-        std::list<Particle> candidates = spatialHashMap->find(Particle(tempPos[p]));
-        for(std::list<Particle>::iterator it=candidates.begin();it!=candidates.end();it++)
+        std::list<unsigned int> candidates = spatialHashMap->find(Particle(tempPos[p]));
+        for(std::list<unsigned int>::iterator it=candidates.begin();it!=candidates.end();it++)
         {
-            if(particles[p].index!=it->index)
+            if(particles[p].index!=*it)
             {
-                if(glm::length(particles[p].pos-it->pos)<kernelSupport)
+                Particle part = particles[*it];
+                if(glm::length(particles[p].pos-part.pos)<=kernelSupport)
                 {
-                    neighbors[p].push_back(*it);
+                    neighbors[p].push_back(part);
                 }
             }
         }
@@ -142,17 +109,20 @@ void PBFSolver::solve(std::vector<Particle>& particles)
     for(unsigned int i=0;i<iterations;i++)
     {
         //Calculate Correction
-        //#pragma omp parallel for
+        #pragma omp parallel for
         for(unsigned int p=0;p<particles.size();p++)
         {
             for(std::vector<AbstractConstraint*>::iterator cit=constraints.begin();cit!=constraints.end();cit++)
             {
-                particles[p].lambda = -(*cit)->execute(particles[p],neighbors[p])/((*cit)->gradientSum(particles[p],neighbors[p])+cfmRegularization);
+                particles[p].lambda = -(*cit)->execute(Particle(tempPos[p]),neighbors[p])/((*cit)->gradientSum(Particle(tempPos[p]),neighbors[p])+cfmRegularization);
+                particles[p].density = (*cit)->execute(Particle(tempPos[p]),neighbors[p]);
                 //std::cout<<(*cit)->execute(particles[p],neighbors[p])<<" "<<((*cit)->gradientSum(particles[p],neighbors[p]))<<" "<<particles[p].lambda<<std::endl;
+                /*
                 if(particles[p].lambda!=particles[p].lambda)
                 {
                     std::cout<<"NAN VALUE LAMBDA "<<particles[p].lambda<<" "<<std::endl;
                 }
+                */
             }
         }
 
@@ -164,12 +134,13 @@ void PBFSolver::solve(std::vector<Particle>& particles)
             float test = 0.0;
             for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
-                float sCorr = -corrConst*std::pow((kernel->execute(glm::length(tempPos[p]-n->pos))/kernel->execute(corrDist)),corrExp);
+                float sCorr = -corrConst*std::pow((densityKernel->execute(tempPos[p]-n->pos)/densityKernel->execute(glm::vec3(kernelSupport,0.0,0.0)*corrDist)),corrExp);
                 //float sCorr = 0;
 
-                displacement[p] += (particles[p].lambda+n->lambda+sCorr)*kernel->grad2(tempPos[p],n->pos);
-                test+=particles[p].lambda+n->lambda;
+                displacement[p] += (particles[p].lambda+n->lambda+sCorr)*gradKernel->grad(tempPos[p]-n->pos);
+                //test+=particles[p].lambda+n->lambda;
                 //std::cout<<"LAMBDA "<<particles[p].lambda<<" "<<n->lambda<<" "<<particles[p].lambda+n->lambda<<" "<<test<<std::endl;
+                /*
                 if(displacement[p]!=displacement[p])
                 {
                     std::cout<<"NAN VALUE DISPLACEMENT "<<particles[p].lambda<<" "<<n->lambda<<std::endl;
@@ -177,40 +148,42 @@ void PBFSolver::solve(std::vector<Particle>& particles)
                 if(sCorr!=sCorr)
                 {
                     std::cout<<"NAN VALUE CORRECTION "<<particles[p].lambda<<" "<<n->lambda<<std::endl;
-                }
+                }*/
             }
             displacement[p] = (1.0f/restDensity)*displacement[p];
+/*
             if(displacement[p]!=displacement[p])
             {
                 std::cout<<"NAN VALUE DISPLACEMENT"<<p<<std::endl;
-            }
-            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,1.0,0.0))+10.0f<0)
+            }*/
+            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,1.0,0.0))+1.0f<0)
             {
-                displacement[p]=-2.01f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,1.0,0.0))+10.0f)*glm::vec3(0.0,1.0,0.0);
+                //std::cout<<((glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,1.0,0.0)))+1.0f)<<std::endl;
+                displacement[p]+=-2.0f*((glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,1.0,0.0)))+1.0f)*glm::vec3(0.0,1.0,0.0);
                 //displacement[p]-=tempPos[p];
             }
 
-            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(-1.0,0.0,0.0))+100.0f<0)
+            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(-1.0,0.0,0.0))+50.0f<0)
             {
-                displacement[p]=-2.01f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(-1.0,0.0,0.0))+100.0f)*glm::vec3(-1.0,0.0,0.0);
+                displacement[p]=-2.0f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(-1.0,0.0,0.0))+50.0f)*glm::vec3(-1.0,0.0,0.0);
                 /*displacement[p]+=(glm::dot((tempPos[p]+displacement[p]),glm::vec3(-1.0,0.0,0.0))+10.0f)*glm::vec3(-1.0,0.0,0.0);
                 displacement[p]-=tempPos[p];*/
             }
-            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(+1.0,0.0,0.0))+100.0f<0)
+            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(+1.0,0.0,0.0))+50.0f<0)
             {
-                displacement[p]=-2.01f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(+1.0,0.0,0.0))+100.0f)*glm::vec3(+1.0,0.0,0.0);
+                displacement[p]=-2.0f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(+1.0,0.0,0.0))+50.0f)*glm::vec3(+1.0,0.0,0.0);
                 /*displacement[p]+=(glm::dot((tempPos[p]+displacement[p]),glm::vec3(+1.0,0.0,0.0))+10.0f)*glm::vec3(+1.0,0.0,0.0);
                 displacement[p]-=tempPos[p];*/
             }
-            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,-1.0))+20.0f<0)
+            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,-1.0))+10.0f<0)
             {
-                displacement[p]=-2.01f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,-1.0))+20.0f)*glm::vec3(0.0,0.0,-1.0);
+                displacement[p]=-2.0f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,-1.0))+10.0f)*glm::vec3(0.0,0.0,-1.0);
                 /*displacement[p]+=(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,-1.0))+10.0f)*glm::vec3(0.0,0.0,-1.0);
                 displacement[p]-=tempPos[p];*/
             }
-            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,+1.0))+20.0f<0)
+            if(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,+1.0))+10.0f<0)
             {
-                displacement[p]=-2.01f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,+1.0))+20.0f)*glm::vec3(0.0,0.0,+1.0);
+                displacement[p]=-2.0f*(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,+1.0))+10.0f)*glm::vec3(0.0,0.0,+1.0);
                 /*displacement[p]+=(glm::dot((tempPos[p]+displacement[p]),glm::vec3(0.0,0.0,+1.0))+10.0f)*glm::vec3(0.0,0.0,+1.0);
                 displacement[p]-=tempPos[p];*/
             }
@@ -229,22 +202,39 @@ void PBFSolver::solve(std::vector<Particle>& particles)
     for(unsigned int p=0;p<particles.size();p++)
     {
         particles[p].vel = (1.0f/timestep)*(tempPos[p]-particles[p].pos);
-
-        //Vorticity Confinement
-        /*glm::vec3 omega;
+    }
+    #pragma omp parallel for
+    for(unsigned int p=0;p<particles.size();p++)
+    {
+        //Calculate curl
+        particles[p].curl = glm::vec3(0.0,0.0,0.0);
         for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
         {
-            omega += glm::cross(n->vel-particles[p].vel,kernel->grad1(particles[p].pos-n->pos));
-        }*/
-
-
+            particles[p].curl += glm::cross(n->vel-particles[p].vel,viscKernel->grad(tempPos[p]-n->pos));
+        }
+        //glm::vec3 vGrad = glm::normalize(particles[p].curl);
+        //glm::vec3 fVort = 0.1f*(glm::cross(vGrad,particles[p].curl));
+        //particles[p].vel += timestep*fVort;
+    }
+    #pragma omp parallel for
+    for(unsigned int p=0;p<particles.size();p++)
+    {
+        glm::vec3 oGrad(0.0,0.0,0.0);
+        for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
+        {
+            float lCurl = glm::length(particles[p].curl-n->curl);
+            glm::vec3 r = -tempPos[p]+n->pos;
+            oGrad += glm::vec3(lCurl/r.x,lCurl/r.y,lCurl/r.z);
+        }
+        oGrad = glm::normalize(oGrad);
+        //particles[p].vel += timestep*0.01f*glm::cross(oGrad,particles[p].curl);
         //XSPH Artificial Viscosity
         glm::vec3 velAccum(0.0f,0.0f,0.0f);
         for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
         {
-            velAccum += (n->vel-particles[p].vel)*kernel->execute(glm::length(tempPos[p]-n->pos));
+            velAccum += (n->vel-particles[p].vel)*viscKernel->execute(tempPos[p]-n->pos);
         }
-        particles[p].vel += artVisc*velAccum;
+        particles[p].vel += timestep*artVisc*velAccum;
         //particles[p].vel += velAccum;
         particles[p].pos  = tempPos[p];
     }

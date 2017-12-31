@@ -6,10 +6,8 @@ class Poly6Kernel : AbstractKernel
 {
 public:
     Poly6Kernel(float h);
-    float execute(float r);
-    float derivation(float r);
-    glm::vec3 grad1(const glm::vec3& x1,const glm::vec3& x2);
-    glm::vec3 grad2(const glm::vec3& x1,const glm::vec3& x2);
+    float execute(const glm::vec3& r);
+    glm::vec3 grad(const glm::vec3& r);
 private:
 };
 

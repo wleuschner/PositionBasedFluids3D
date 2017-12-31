@@ -15,6 +15,7 @@ public:
     float lambda;
     float mass;
     float density;
+    glm::vec3 curl;
 };
 
 #endif

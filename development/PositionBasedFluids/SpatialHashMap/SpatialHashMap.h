@@ -12,12 +12,12 @@ public:
     SpatialHashMap3D(unsigned int size,float cellSize);
 
     void insert(const Particle& p);
-    std::list<Particle> find(const Particle &p);
+    std::list<unsigned int> find(const Particle &p);
     void clear();
 
 private:
     unsigned int size;
     float cellSize;
-    std::vector<std::list<Particle>> buckets;
+    std::vector<std::list<unsigned int>> buckets;
 };
 #endif

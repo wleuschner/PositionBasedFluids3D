@@ -7,6 +7,7 @@
 
 #include"../Solver/SolverImpl/PBFSolver.h"
 #include"../Solver/Kernel/KernelImpl/Poly6Kernel.h"
+#include"../Solver/Kernel/KernelImpl/SpikyKernel.h"
 
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
@@ -23,13 +24,15 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     updateTimer.setSingleShot(false);
     updateTimer.start();
 
-    Poly6Kernel* kernel = new Poly6Kernel(0.1);
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)kernel,0.0083,4);
+    Poly6Kernel* densityKernel = new Poly6Kernel(0.5);
+    SpikyKernel* gradKernel = new SpikyKernel(0.5);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)densityKernel,0.1,4);
     solver = (AbstractSolver*)pbf;
 }
 
 void GLCanvas::simulate()
 {
+    updateTimer.stop();
     if(running)
     {
         solver->solve(particles->getParticles());
@@ -37,6 +40,7 @@ void GLCanvas::simulate()
         particles->upload();
     }
     update();
+    updateTimer.start();
 }
 
 void GLCanvas::initializeGL()
@@ -77,14 +81,20 @@ void GLCanvas::initializeGL()
     }
     program->bind();
 
-    Vertex a1,a2,a3;
-    a1.pos = glm::vec3(0.0f,0.5f,-30.0f);
-    a2.pos = glm::vec3(1.0f,-0.5f,-30.0f);
-    a3.pos = glm::vec3(-1.0f,-0.5f,-30.0f);
+    Vertex a1,a2,a3,a4,a5,a6;
+    a1.pos = 1.0f*glm::vec3(0.0f,1.0f,0.0f);
+    a2.pos = 1.0f*glm::vec3(1.0f,0.0f,0.0f);
+    a3.pos = 1.0f*glm::vec3(-1.0f,0.0f,0.0f);
+    a4.pos = 1.0f*glm::vec3(0.0f,-1.0f,0.0f);
+    a5.pos = 1.0f*glm::vec3(1.0f,0.0f,0.0f);
+    a6.pos = 1.0f*glm::vec3(-1.0f,0.0f,0.0f);
     std::vector<Vertex> test;
     test.push_back(a1);
     test.push_back(a2);
     test.push_back(a3);
+    test.push_back(a4);
+    test.push_back(a5);
+    test.push_back(a6);
 
     std::cout<<sizeof(Vertex)<<std::endl;
     vbo = new VertexBuffer();
@@ -99,15 +109,17 @@ void GLCanvas::initializeGL()
     particles = new ParticleBuffer();
     particles->bind();
     unsigned int cc = 0;
-    for( int z=-2;z!=3;z++)
+    for( int z=-5;z!=6;z++)
     {
-        for( int y=-2;y!=3;y++)
+        for( int y=-5;y!=6;y++)
         {
-            for( int x=-2;x!=3;x++)
+            for( int x=-5;x!=6;x++)
             {
-                particles->addParticle(Particle(cc,glm::vec3(x/20.0-10,y/20.0,z/20.0+10),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                /*particles->addParticle(Particle(cc,glm::vec3(x/10.0,y/10.0,z/10.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                cc++;*/
+                particles->addParticle(Particle(cc,glm::vec3(x/20.0-10,y/20.0,z/20.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;
-                particles->addParticle(Particle(cc,glm::vec3(x/20.0+10,y/20.0,z/20.0-10),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                particles->addParticle(Particle(cc,glm::vec3(x/20.0+10,y/20.0,z/20.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;
             }
         }
@@ -116,11 +128,13 @@ void GLCanvas::initializeGL()
 
     glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)sizeof(unsigned int));
     glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)36);
+    glEnableVertexAttribArray(3);
 
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(2,1);
-
+    glVertexAttribDivisor(3,1);
     //solver->init(particles->getParticles());
 
 }
@@ -135,7 +149,7 @@ void GLCanvas::paintGL()
     program->uploadMat4("pvm",pvm);
     program->uploadMat3("normalMatrix",normalMatrix);
     vbo->bind();
-    glDrawArraysInstanced(GL_TRIANGLES,0,3,particles->getNumParticles());
+    glDrawArraysInstanced(GL_TRIANGLES,0,6,particles->getNumParticles());
 }
 
 void GLCanvas::resizeGL(int w, int h)
@@ -149,9 +163,9 @@ void GLCanvas::mousePressEvent(QMouseEvent *event)
     switch(event->button())
     {
     case Qt::LeftButton:
-        particles->addParticle(Particle(camera.getPosition()));
+        /*particles->addParticle(Particle(camera.getPosition()));
         particles->bind();
-        particles->upload();
+        particles->upload();*/
         break;
     case Qt::MiddleButton:
         mouseCoords = event->pos();
