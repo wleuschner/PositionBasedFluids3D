@@ -257,37 +257,42 @@ void GLCanvas::keyReleaseEvent(QKeyEvent *event)
 
 void GLCanvas::setNumIterations(int val)
 {
+    solver->setNumIterations(val);
+}
 
+void GLCanvas::setTimestep(double val)
+{
+    solver->setTimestep(val);
 }
 
 void GLCanvas::setKernelSupport(double val)
 {
-
+    solver->setKernelSupport(val);
 }
 
 void GLCanvas::setRestDensity(double val)
 {
-
+    solver->setRestDensity(val);
 }
 
 void GLCanvas::setArtVisc(double val)
 {
-
+    solver->setArtVisc(val);
 }
 
 void GLCanvas::setArtVort(double val)
 {
-
+    solver->setArtVort(val);
 }
 
 void GLCanvas::setCfmRegularization(double val)
 {
-
+    solver->setCfmRegularization(val);
 }
 
 void GLCanvas::setCorrConst(double val)
 {
-
+    solver->setCorrConst(val);
 }
 
 void GLCanvas::setCorrDist(double val)

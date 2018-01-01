@@ -21,25 +21,19 @@ float DensityConstraint::execute(const Particle& x,const std::list<Particle>& pa
 float DensityConstraint::gradientSum(const Particle& x,const std::list<Particle>& particles)
 {
     float result = 0.0;
+    float invRestDensity=(1.0f/restDensity);
     glm::vec3 grad(0.0,0.0,0.0);
     for(std::list<Particle>::const_iterator pit=particles.begin();pit!=particles.end();pit++)
     {
         grad += gradKernel->grad(x.pos-pit->pos);
     }
-    grad = (1.0f/restDensity)*grad;
+    grad = invRestDensity*grad;
     result += glm::dot(grad,grad);
-    if(result!=result)
-    {
-        std::cout<<"RESULT BROKEN"<<std::endl;
-    }
+
     for(std::list<Particle>::const_iterator pit=particles.begin();pit!=particles.end();pit++)
     {
-        grad = (1.0f/restDensity)*(-gradKernel->grad(x.pos-pit->pos));
+        grad = invRestDensity*(-gradKernel->grad(x.pos-pit->pos));
         result += glm::dot(grad,grad);
-    }
-    if(result!=result)
-    {
-        std::cout<<"FINAL RESULT BROKEN"<<std::endl;
     }
     return result;
 }

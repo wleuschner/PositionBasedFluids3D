@@ -25,6 +25,7 @@ protected:
     void keyReleaseEvent(QKeyEvent *event);
 protected slots:
     void setNumIterations(int val);
+    void setTimestep(double val);
     void setKernelSupport(double val);
     void setRestDensity(double val);
     void setArtVisc(double val);

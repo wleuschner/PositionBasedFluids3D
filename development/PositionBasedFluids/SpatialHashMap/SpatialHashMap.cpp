@@ -48,155 +48,164 @@ void SpatialHashMap3D::parallelInsert(const std::vector<Particle>& particles)
 
 std::list<unsigned int> SpatialHashMap3D::find(const Particle &p)
 {
+    unsigned int leftX = ((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093));
+    unsigned int centerX = ((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093));
+    unsigned int rightX = ((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093));
+    unsigned int leftY = ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663));
+    unsigned int centerY = ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663));
+    unsigned int rightY = ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663));
+    unsigned int leftZ = ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791));
+    unsigned int centerZ = ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791));
+    unsigned int rightZ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791));
     std::list<unsigned int> nList;
     std::list<unsigned int> bucket;
     unsigned int c = 0;
 
     //Bottom Layer
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
+    c = (leftX^
+                      leftY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
     //nList.insert(nList.end(),bucket.begin(),bucket.end());
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
+    c = (centerX^
+                      leftY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
+    c = (rightX^
+                      leftY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (leftX^
+                      leftY^
+                      centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (centerX^
+                      leftY^
+                      centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y-cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (rightX^
+                      leftY^
+                      centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (leftX^
+                      leftY^
+                      rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+    c = (centerX^
+                      leftY^
+                      rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+    c = (rightX^
+                      leftY^
+                      rightZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
     //Center Layer
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
+    c = (leftX^
+                      centerY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
+    c = (centerX^
+                      centerY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
+    c = (rightX^
+                      centerY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (leftX^
+                      centerY^
+                      centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (centerX^
+                      centerY^
+                      centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (rightX^
+                      centerY^
+                      centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (leftX^
+                      centerY^
+                      rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+    c = (centerX^
+                      centerY^
+                      rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+    c = (rightX^
+                      centerY^
+                      rightZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
     //Top Layer
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
+    c = (leftX^
+                      rightY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
+    c = (centerX^
+                      rightY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z-cellSize)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z)/cellSize)*83492791))) % size;
+    c = (rightX^
+                      rightY^
+                      leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (((unsigned int)(std::floor((p.pos.x-cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (leftX^
+                      rightY^
+                      centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (centerX^
+                      rightY^
+                      centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (((unsigned int)(std::floor((p.pos.x+cellSize)/cellSize)*73856093))^
-                      ((unsigned int)(std::floor((p.pos.y+cellSize)/cellSize)*19349663))^
-                      ((unsigned int)(std::floor((p.pos.z+cellSize)/cellSize)*83492791))) % size;
+    c = (rightX^
+                      rightY^
+                      centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (leftX^
+                      rightY^
+                      rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+    c = (centerX^
+                      rightY^
+                      rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+    c = (rightX^
+                      rightY^
+                      rightZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
     return nList;

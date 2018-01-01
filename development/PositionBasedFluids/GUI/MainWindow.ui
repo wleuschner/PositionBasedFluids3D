@@ -55,7 +55,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QSpinBox" name="spinBoxIterations"/>
+         <widget class="QSpinBox" name="spinBoxIterations">
+          <property name="value">
+           <number>4</number>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -69,7 +73,17 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="spinBoxIterations_2"/>
+         <widget class="QDoubleSpinBox" name="spinBoxTimeStep">
+          <property name="decimals">
+           <number>6</number>
+          </property>
+          <property name="singleStep">
+           <double>0.000100000000000</double>
+          </property>
+          <property name="value">
+           <double>0.080000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -83,7 +97,14 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_3"/>
+         <widget class="QDoubleSpinBox" name="spinBoxRadius">
+          <property name="singleStep">
+           <double>0.001000000000000</double>
+          </property>
+          <property name="value">
+           <double>1.500000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -139,7 +160,17 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox"/>
+         <widget class="QDoubleSpinBox" name="spinBoxArtVisc">
+          <property name="decimals">
+           <number>6</number>
+          </property>
+          <property name="singleStep">
+           <double>0.000100000000000</double>
+          </property>
+          <property name="value">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -153,7 +184,17 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_2"/>
+         <widget class="QDoubleSpinBox" name="spinBoxArtVort">
+          <property name="decimals">
+           <number>6</number>
+          </property>
+          <property name="singleStep">
+           <double>0.000100000000000</double>
+          </property>
+          <property name="value">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -167,7 +208,17 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="spinBoxRestDensity"/>
+         <widget class="QDoubleSpinBox" name="spinBoxRestDensity">
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <double>10000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>700.000000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -181,7 +232,17 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_7"/>
+         <widget class="QDoubleSpinBox" name="spinBoxCorrConst">
+          <property name="decimals">
+           <number>6</number>
+          </property>
+          <property name="singleStep">
+           <double>0.000100000000000</double>
+          </property>
+          <property name="value">
+           <double>0.001000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -195,7 +256,14 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_6"/>
+         <widget class="QDoubleSpinBox" name="spinBoxCorrDist">
+          <property name="singleStep">
+           <double>0.010000000000000</double>
+          </property>
+          <property name="value">
+           <double>0.010000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -209,7 +277,11 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_5"/>
+         <widget class="QDoubleSpinBox" name="spinBoxCorrExp">
+          <property name="value">
+           <double>4.000000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
@@ -223,7 +295,14 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="doubleSpinBox_4"/>
+         <widget class="QDoubleSpinBox" name="spinBoxCFM">
+          <property name="maximum">
+           <double>1000.000000000000000</double>
+          </property>
+          <property name="value">
+           <double>600.000000000000000</double>
+          </property>
+         </widget>
         </item>
        </layout>
       </item>
