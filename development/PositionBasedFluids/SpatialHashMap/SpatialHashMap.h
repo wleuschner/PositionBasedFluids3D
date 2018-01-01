@@ -4,18 +4,22 @@
 #define __SPATIAL_HASH_MAP_H
 #include<vector>
 #include<list>
+#include<omp.h>
 #include"../Solver/Particle.h"
 
 class SpatialHashMap3D
 {
 public:
     SpatialHashMap3D(unsigned int size,float cellSize);
+    ~SpatialHashMap3D();
 
+    void parallelInsert(const std::vector<Particle>& particles);
     void insert(const Particle& p);
     std::list<unsigned int> find(const Particle &p);
     void clear();
 
 private:
+    omp_lock_t* bucketLocks;
     unsigned int size;
     float cellSize;
     std::vector<std::list<unsigned int>> buckets;

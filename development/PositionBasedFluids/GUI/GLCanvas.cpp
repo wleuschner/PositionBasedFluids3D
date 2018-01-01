@@ -11,6 +11,7 @@
 
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
+    screenshotNo = 0;
     running = false;
     format = QSurfaceFormat::defaultFormat();
     format.setProfile(QSurfaceFormat::CoreProfile);
@@ -24,9 +25,9 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     updateTimer.setSingleShot(false);
     updateTimer.start();
 
-    Poly6Kernel* densityKernel = new Poly6Kernel(0.5);
-    SpikyKernel* gradKernel = new SpikyKernel(0.5);
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)densityKernel,0.1,4);
+    Poly6Kernel* densityKernel = new Poly6Kernel(1.5f);
+    SpikyKernel* gradKernel = new SpikyKernel(1.5f);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
 }
 
@@ -38,6 +39,10 @@ void GLCanvas::simulate()
         solver->solve(particles->getParticles());
         particles->bind();
         particles->upload();
+        QImage screenshot = grabFramebuffer();
+        screenshot.save(QString("Screenshot")+QString::number(screenshotNo)+QString(".png"),"png");
+        screenshotNo++;
+
     }
     update();
     updateTimer.start();
@@ -82,12 +87,12 @@ void GLCanvas::initializeGL()
     program->bind();
 
     Vertex a1,a2,a3,a4,a5,a6;
-    a1.pos = 1.0f*glm::vec3(0.0f,1.0f,0.0f);
-    a2.pos = 1.0f*glm::vec3(1.0f,0.0f,0.0f);
-    a3.pos = 1.0f*glm::vec3(-1.0f,0.0f,0.0f);
-    a4.pos = 1.0f*glm::vec3(0.0f,-1.0f,0.0f);
-    a5.pos = 1.0f*glm::vec3(1.0f,0.0f,0.0f);
-    a6.pos = 1.0f*glm::vec3(-1.0f,0.0f,0.0f);
+    a1.pos = 0.1f*glm::vec3(0.0f,1.0f,0.0f);
+    a2.pos = 0.1f*glm::vec3(1.0f,0.0f,0.0f);
+    a3.pos = 0.1f*glm::vec3(-1.0f,0.0f,0.0f);
+    a4.pos = 0.1f*glm::vec3(0.0f,-1.0f,0.0f);
+    a5.pos = 0.1f*glm::vec3(1.0f,0.0f,0.0f);
+    a6.pos = 0.1f*glm::vec3(-1.0f,0.0f,0.0f);
     std::vector<Vertex> test;
     test.push_back(a1);
     test.push_back(a2);
@@ -117,9 +122,9 @@ void GLCanvas::initializeGL()
             {
                 /*particles->addParticle(Particle(cc,glm::vec3(x/10.0,y/10.0,z/10.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;*/
-                particles->addParticle(Particle(cc,glm::vec3(x/20.0-10,y/20.0,z/20.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
-                cc++;
-                particles->addParticle(Particle(cc,glm::vec3(x/20.0+10,y/20.0,z/20.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                //particles->addParticle(Particle(cc,glm::vec3(x/5.0-10,y/5.0,z/5.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                //cc++;
+                particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+5)/10.0),-0.5+((y+5)/10.0),-0.5+((z+5)/10.0)),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;
             }
         }
@@ -232,9 +237,14 @@ void GLCanvas::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Space:
         if(!running)
+        {
+            screenshotNo = 0;
             running = true;
+        }
         else
+        {
             running = false;
+        }
         //simulate();
         break;
     }
@@ -245,3 +255,47 @@ void GLCanvas::keyReleaseEvent(QKeyEvent *event)
     std::cout<<"KEYRELEASE"<<std::endl;
 }
 
+void GLCanvas::setNumIterations(int val)
+{
+
+}
+
+void GLCanvas::setKernelSupport(double val)
+{
+
+}
+
+void GLCanvas::setRestDensity(double val)
+{
+
+}
+
+void GLCanvas::setArtVisc(double val)
+{
+
+}
+
+void GLCanvas::setArtVort(double val)
+{
+
+}
+
+void GLCanvas::setCfmRegularization(double val)
+{
+
+}
+
+void GLCanvas::setCorrConst(double val)
+{
+
+}
+
+void GLCanvas::setCorrDist(double val)
+{
+
+}
+
+void GLCanvas::setCorrExp(double val)
+{
+
+}

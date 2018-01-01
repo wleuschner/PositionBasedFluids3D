@@ -24,8 +24,19 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
 protected slots:
+    void setNumIterations(int val);
+    void setKernelSupport(double val);
+    void setRestDensity(double val);
+    void setArtVisc(double val);
+    void setArtVort(double val);
+    void setCfmRegularization(double val);
+    void setCorrConst(double val);
+    void setCorrDist(double val);
+    void setCorrExp(double val);
+
     void simulate();
 private:
+    unsigned int screenshotNo;
     bool running;
     QTimer simulationTimer;
     QTimer updateTimer;

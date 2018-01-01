@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8.8)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
 #set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)

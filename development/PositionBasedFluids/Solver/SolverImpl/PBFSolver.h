@@ -21,6 +21,7 @@ private:
     float kernelSupport;
     float restDensity;
     float artVisc;
+    float artVort;
     float cfmRegularization;
     float corrConst;
     float corrDist;
