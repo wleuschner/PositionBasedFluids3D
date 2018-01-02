@@ -17,7 +17,7 @@ float SpikyKernel::execute(const glm::vec3& r)
 
 glm::vec3 SpikyKernel::grad(const glm::vec3& r)
 {
-    if(glm::length(r)>h || glm::length(r)<0.0001)
+    if(glm::length(r)>h || glm::length(r)==0)
     {
         return glm::vec3(0.0,0.0,0.0);
     }

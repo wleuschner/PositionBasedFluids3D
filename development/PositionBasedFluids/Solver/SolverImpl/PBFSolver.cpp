@@ -1,11 +1,12 @@
 #include"PBFSolver.h"
 #include"../Constraint/ConstraintImpl/DensityConstraint.h"
+#include<glm/gtx/intersect.hpp>
 #include<list>
 #include<iostream>
 
 PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
 {
-    this->spatialHashMap = new SpatialHashMap3D(2000,2*densityKernel->getRadius());
+    this->spatialHashMap = new SpatialHashMap3D(2000,densityKernel->getRadius());
     DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
 }
@@ -13,7 +14,7 @@ PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,Ab
 PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
 {
     this->constraints = constraints;
-    this->spatialHashMap = new SpatialHashMap3D(50000,2*densityKernel->getRadius());
+    this->spatialHashMap = new SpatialHashMap3D(50000,densityKernel->getRadius());
     DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
 }
@@ -43,7 +44,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         {
             accForces += (*f)->execute(particles[p].pos);
         }
-        particles[p].vel += timestep*accForces;
+        particles[p].vel += accForces;
         particles[p].tempPos        = particles[p].pos + timestep*particles[p].vel;
     }
 
@@ -57,7 +58,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
             if(particles[p].index!=*it)
             {
                 Particle part = particles[*it];
-                if(glm::length(particles[p].pos-part.pos)<=kernelSupport)
+                if(glm::length(particles[p].tempPos-part.pos)<=kernelSupport)
                 {
                     neighbors[p].push_back(part);
                 }
@@ -94,39 +95,41 @@ void PBFSolver::solve(std::vector<Particle>& particles)
             }
             displacement[p] = invRestDensity*displacement[p];
 
-            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
+            /*for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
                 if(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*0.05<0.0)
                 {
-                    displacement[p] += 2*std::abs(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*0.05f)*glm::normalize((particles[p].tempPos+displacement[p])-n->pos);
+                    displacement[p] += -0.5f*(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*0.05f)*glm::normalize((particles[p].tempPos+displacement[p])-n->pos);
                 }
-            }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+1.0f<0)
+            }*/
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<0)
             {
-                displacement[p]+=-2.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+1.0f)*glm::vec3(0.0,1.0,0.0);
+                //std::cout<<glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<<std::endl;
+                displacement[p] = -1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+0.5f)*glm::vec3(0.0,1.0,0.0);
             }
-            /*if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0))+1.5f<0)
+            /*
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0))+1.5f<0)
             {
                 //std::cout<<((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+1.0f)<<std::endl;
-                displacement[p]+=-2.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0)))+1.5f)*glm::vec3(0.0,-1.0,0.0);
+                displacement[p] =-1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0)))+1.5f)*glm::vec3(0.0,-1.0,0.0);
                 //displacement[p]-=particles[p].tempPos;
             }*/
 
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.5f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.0f<0)
             {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.5f)*glm::vec3(-1.0,0.0,0.0);
+                displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.0f)*glm::vec3(-1.0,0.0,0.0);
             }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.5f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.0f<0)
             {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.5f)*glm::vec3(+1.0,0.0,0.0);
+                displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.0f)*glm::vec3(+1.0,0.0,0.0);
             }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.5f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.0f<0)
             {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.5f)*glm::vec3(0.0,0.0,-1.0);
+                displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.0f)*glm::vec3(0.0,0.0,-1.0);
             }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.5f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.0f<0)
             {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.5f)*glm::vec3(0.0,0.0,+1.0);
+                displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.0f)*glm::vec3(0.0,0.0,+1.0);
             }
         }
 

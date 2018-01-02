@@ -1,4 +1,4 @@
-#version 430
+#version 330
 struct LightSource
 {
     vec3 pos;

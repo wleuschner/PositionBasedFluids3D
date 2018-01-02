@@ -9,7 +9,7 @@ Poly6Kernel::Poly6Kernel(float h) : AbstractKernel(h)
 
 float Poly6Kernel::execute(const glm::vec3& r)
 {
-    if(glm::length(r)>=h)
+    if(glm::length(r)>h)
     {
         return 0;
     }

@@ -56,7 +56,7 @@ void GLCanvas::initializeGL()
 
     Poly6Kernel* densityKernel = new Poly6Kernel(1.5f);
     SpikyKernel* gradKernel = new SpikyKernel(1.5f);
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)densityKernel,0.08,4);
     //PBFSolverGPU* pbf = new PBFSolverGPU((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
 
@@ -124,7 +124,7 @@ void GLCanvas::initializeGL()
                 //particles->addParticle(Particle(cc,glm::vec3(x/5.0-10,y/5.0,z/5.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 //cc++;
 
-                particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+5)/10.0),-0.5+((y+5)/10.0),-0.5+((z+5)/10.0)),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+5)/10.0),-0.5+((y+5)/10.0),-0.5+((z+5)/10.0)),glm::vec3(0.0,0.0,0.0),1.0,0.0));
                 cc++;
             }
         }
