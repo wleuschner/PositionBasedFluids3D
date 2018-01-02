@@ -3,7 +3,7 @@
 
 AbstractSolver::AbstractSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel)
 {
-    this->restDensity = 700.0f;
+    this->restDensity = 1000.0f;
     this->iterations = 4;
     this->densityKernel = densityKernel;
     this->gradKernel = gradKernel;

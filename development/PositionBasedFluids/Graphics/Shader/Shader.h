@@ -8,6 +8,7 @@ class Shader
 public:
     Shader(unsigned int shaderType);
     Shader(unsigned int shaderType,const std::string& fileName);
+    ~Shader();
     bool compile();
     std::string compileLog();
 private:

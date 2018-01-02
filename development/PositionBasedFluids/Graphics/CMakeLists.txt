@@ -8,6 +8,8 @@ add_subdirectory("Light")
 add_subdirectory("Vertex")
 add_subdirectory("ParticleBuffer")
 add_subdirectory("Camera")
+add_subdirectory("Model")
+add_subdirectory("Material")
 
 
 set(HEADERS

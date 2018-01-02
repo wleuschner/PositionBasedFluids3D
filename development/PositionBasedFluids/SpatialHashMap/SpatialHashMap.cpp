@@ -215,6 +215,4 @@ void SpatialHashMap3D::clear()
 {
     buckets.clear();
     buckets.resize(size);
-
-
 }

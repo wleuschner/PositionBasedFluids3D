@@ -9,6 +9,6 @@ void Vertex::enableVertexAttribs()
 
 void Vertex::setVertexAttribs()
 {
-    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,24,(void*)0);
-    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,24,(void*)12);
+    glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,32,(void*)0);
+    glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,32,(void*)12);
 }

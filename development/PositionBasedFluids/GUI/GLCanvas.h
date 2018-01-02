@@ -7,6 +7,7 @@
 #include"../Graphics/VertexBuffer/VertexBuffer.h"
 #include"../Graphics/ParticleBuffer/ParticleBuffer.h"
 #include"../Graphics/Camera/Camera.h"
+#include"../Graphics/Model/Model.h"
 #include"../Solver/AbstractSolver.h"
 
 class GLCanvas : public QOpenGLWidget
@@ -48,9 +49,11 @@ private:
     QSurfaceFormat format;
     Camera camera;
     ShaderProgram* program;
-    VertexBuffer* vbo;
     ParticleBuffer* particles;
     unsigned int vao;
+
+    Light light;
+    Model *sphere;
 
     glm::mat4 projection;
     glm::mat4 view;

@@ -22,6 +22,11 @@ Shader::Shader(unsigned int shaderType,const std::string& fileName)
     glShaderSource(id,1,&c_str,NULL);
 }
 
+Shader::~Shader()
+{
+    glDeleteShader(id);
+}
+
 bool Shader::compile()
 {
     glCompileShader(id);

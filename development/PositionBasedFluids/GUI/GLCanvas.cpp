@@ -6,6 +6,7 @@
 #include<iostream>
 
 #include"../Solver/SolverImpl/PBFSolver.h"
+#include"../Solver/SolverImpl/PBFSolverGPU.h"
 #include"../Solver/Kernel/KernelImpl/Poly6Kernel.h"
 #include"../Solver/Kernel/KernelImpl/SpikyKernel.h"
 
@@ -16,19 +17,12 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     format = QSurfaceFormat::defaultFormat();
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setMajorVersion(4);
-    format.setMinorVersion(2);
+    format.setMinorVersion(4);
     setFormat(format);
+
 
     connect(&updateTimer,SIGNAL(timeout()),this,SLOT(simulate()));
     //connect(&updateTimer,SIGNAL(timeout()),this,SLOT(update()));
-    updateTimer.setInterval(1000.0/30);
-    updateTimer.setSingleShot(false);
-    updateTimer.start();
-
-    Poly6Kernel* densityKernel = new Poly6Kernel(1.5f);
-    SpikyKernel* gradKernel = new SpikyKernel(1.5f);
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
-    solver = (AbstractSolver*)pbf;
 }
 
 void GLCanvas::simulate()
@@ -52,14 +46,25 @@ void GLCanvas::initializeGL()
 {
     glewInit();
 
+    updateTimer.setInterval(1000.0/30);
+    updateTimer.setSingleShot(false);
+    updateTimer.start();
+
+    Poly6Kernel* densityKernel = new Poly6Kernel(1.5f);
+    SpikyKernel* gradKernel = new SpikyKernel(1.5f);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
+    //PBFSolverGPU* pbf = new PBFSolverGPU((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
+    solver = (AbstractSolver*)pbf;
+
     glGenVertexArrays(1,&vao);
     glBindVertexArray(vao);
 
     glClearColor(0.0,0.0,0.0,1.0);
     glClearDepth(1.0);
     glDepthFunc(GL_LEQUAL);
+    glEnable(GL_DEPTH_TEST);
 
-    glDisable(GL_DEPTH_TEST);
+    glCullFace(GL_CCW);
     glDisable(GL_CULL_FACE);
 
 
@@ -86,25 +91,15 @@ void GLCanvas::initializeGL()
     }
     program->bind();
 
-    Vertex a1,a2,a3,a4,a5,a6;
-    a1.pos = 0.1f*glm::vec3(0.0f,1.0f,0.0f);
-    a2.pos = 0.1f*glm::vec3(1.0f,0.0f,0.0f);
-    a3.pos = 0.1f*glm::vec3(-1.0f,0.0f,0.0f);
-    a4.pos = 0.1f*glm::vec3(0.0f,-1.0f,0.0f);
-    a5.pos = 0.1f*glm::vec3(1.0f,0.0f,0.0f);
-    a6.pos = 0.1f*glm::vec3(-1.0f,0.0f,0.0f);
-    std::vector<Vertex> test;
-    test.push_back(a1);
-    test.push_back(a2);
-    test.push_back(a3);
-    test.push_back(a4);
-    test.push_back(a5);
-    test.push_back(a6);
+    //Create Light
+    light = Light(glm::vec3(-10.0,10.0,5.0));
 
-    std::cout<<sizeof(Vertex)<<std::endl;
-    vbo = new VertexBuffer();
-    vbo->bind();
-    vbo->upload(test);
+    //Create Sphere Model
+    sphere = new Model();
+    //sphere->load("Resources/sphere.obj");
+    sphere = Model::createSphere(0.1,16,16);
+
+    sphere->bind();
 
     //Enable Vertex Attrib Arrays
     Vertex::setVertexAttribs();
@@ -124,11 +119,13 @@ void GLCanvas::initializeGL()
                 cc++;*/
                 //particles->addParticle(Particle(cc,glm::vec3(x/5.0-10,y/5.0,z/5.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 //cc++;
+
                 particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+5)/10.0),-0.5+((y+5)/10.0),-0.5+((z+5)/10.0)),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;
             }
         }
     }
+    //particles->addParticle(Particle(0,glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
     particles->upload();
 
     glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)sizeof(unsigned int));
@@ -140,8 +137,6 @@ void GLCanvas::initializeGL()
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(2,1);
     glVertexAttribDivisor(3,1);
-    //solver->init(particles->getParticles());
-
 }
 
 void GLCanvas::paintGL()
@@ -149,12 +144,16 @@ void GLCanvas::paintGL()
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     program->bind();
     view = camera.getView();
-    glm::mat4 pvm = projection*view*model;
-    glm::mat4 normalMatrix = glm::transpose(glm::inverse(glm::mat3(view*model)));
+    glm::mat4 modelView = view*model;
+    glm::mat4 pvm = projection*modelView;
+    glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
+    program->uploadMat4("modelView",modelView);
     program->uploadMat4("pvm",pvm);
+    program->uploadMat4("view",view);
     program->uploadMat3("normalMatrix",normalMatrix);
-    vbo->bind();
-    glDrawArraysInstanced(GL_TRIANGLES,0,6,particles->getNumParticles());
+    program->uploadVec3("cPos",camera.getPosition());
+    program->uploadLight("light0",light,view);
+    glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
 }
 
 void GLCanvas::resizeGL(int w, int h)

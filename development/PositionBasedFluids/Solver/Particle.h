@@ -16,6 +16,7 @@ public:
     float mass;
     float density;
     glm::vec3 curl;
+    glm::vec3 tempPos;
 };
 
 #endif

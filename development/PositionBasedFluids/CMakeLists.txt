@@ -18,6 +18,7 @@ add_subdirectory("Solver")
 add_subdirectory("SpatialHashMap")
 add_subdirectory("GUI")
 add_subdirectory("Graphics")
+add_subdirectory("Resources")
 
 
 set(SOURCE
@@ -25,11 +26,15 @@ set(SOURCE
    main.cpp
 )
 
+set(RES_FILES
+   ${RES_FILES}
+)
+
 QT5_WRAP_UI(QT_HEADER_FORM GUI/MainWindow.ui)
 QT5_WRAP_CPP(QT_HEADER_MOC GUI/MainWindow.h GUI/GLCanvas.h)
 
 
-add_executable(${PROJECT_NAME} ${SOURCE} ${HEADERS} ${QT_HEADER_FORM} ${QT_HEADER_MOC})
+add_executable(${PROJECT_NAME} ${RES_FILES} ${SOURCE} ${HEADERS} ${QT_HEADER_FORM} ${QT_HEADER_MOC})
 
 
 find_package(OpenMP)
@@ -42,8 +47,9 @@ include_directories(${Qt5Widgets_INCLUDES})
 add_definitions(${Qt5Widgets_DEFINITIONS})
 find_package (GLEW REQUIRED)
 find_package(OpenGL)
+find_package(assimp)
 qt5_use_modules(${PROJECT_NAME} Widgets OpenGL Core Gui)
-target_link_libraries(${PROJECT_NAME} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES} assimp)
 
 set (source ${CMAKE_SOURCE_DIR}/Resources)
 set (destination ${CMAKE_CURRENT_BINARY_DIR}/Resources)

@@ -1,16 +1,29 @@
-#include"PBFSolver.h"
+#include"PBFSolverGPU.h"
 #include"../Constraint/ConstraintImpl/DensityConstraint.h"
 #include<list>
 #include<iostream>
+#include<GL/glew.h>
 
-PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
+PBFSolverGPU::PBFSolverGPU(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
 {
     this->spatialHashMap = new SpatialHashMap3D(2000,2*densityKernel->getRadius());
     DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
+    Shader computeShader(GL_COMPUTE_SHADER,"Resources/shader.glsl");
+    if(!computeShader.compile())
+    {
+        std::cout<<computeShader.compileLog()<<std::endl;
+    }
+    computeProgram = new ShaderProgram();
+    computeProgram->attachShader(computeShader);
+    if(!computeProgram->link())
+    {
+        std::cout<<computeProgram->linkLog()<<std::endl;
+    }
+    computeProgram->bind();
 }
 
-PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
+PBFSolverGPU::PBFSolverGPU(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
 {
     this->constraints = constraints;
     this->spatialHashMap = new SpatialHashMap3D(50000,2*densityKernel->getRadius());
@@ -18,7 +31,7 @@ PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,Ab
     this->constraints.push_back((AbstractConstraint*)ds);
 }
 
-void PBFSolver::init(std::vector<Particle>& particles)
+void PBFSolverGPU::init(std::vector<Particle>& particles)
 {
 
     /*for(unsigned int p=0;p<particles.size();p++)
@@ -28,8 +41,19 @@ void PBFSolver::init(std::vector<Particle>& particles)
     this->spatialHashMap->parallelInsert(particles);
 }
 
-void PBFSolver::solve(std::vector<Particle>& particles)
+void PBFSolverGPU::solve(std::vector<Particle>& particles)
 {
+    computeProgram->uploadScalar("timestep",timestep);
+    computeProgram->uploadUnsignedInt("iterations",iterations);
+    computeProgram->uploadScalar("kernelSupport",kernelSupport);
+    computeProgram->uploadScalar("restDensity",restDensity);
+    computeProgram->uploadScalar("artVisc",artVisc);
+    computeProgram->uploadScalar("artVort",artVort);
+    computeProgram->uploadScalar("cfmRegularization",cfmRegularization);
+    computeProgram->uploadScalar("corrConst",corrConst);
+    computeProgram->uploadScalar("corrDist",corrDist);
+    computeProgram->uploadScalar("corrExp",corrExp);
+
     std::vector<std::list<Particle>> neighbors(particles.size());
     std::vector<glm::vec3> displacement(particles.size());
 
@@ -46,6 +70,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         particles[p].vel += timestep*accForces;
         particles[p].tempPos        = particles[p].pos + timestep*particles[p].vel;
     }
+    computeProgram->uploadUnsignedInt("taskId",0);
 
     //Neighbor search
     #pragma omp parallel for

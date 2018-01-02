@@ -6,7 +6,9 @@ class Light
 {
 public:
     Light();
-private:
+    Light(const glm::vec3& pos);
+    Light(const glm::vec3& pos,const glm::vec3& amb,const glm::vec3& diff,const glm::vec3& spec,float shininess);
+
     glm::vec3 pos;
     glm::vec3 amb;
     glm::vec3 diff;

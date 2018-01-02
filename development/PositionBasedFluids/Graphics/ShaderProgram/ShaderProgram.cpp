@@ -42,6 +42,32 @@ unsigned int ShaderProgram::getAttribLocation(const std::string& name)
     return glGetAttribLocation(id,name.c_str());
 }
 
+void ShaderProgram::setAttribute(unsigned int loc,unsigned int type,unsigned int offset,unsigned int n,unsigned int size)
+{
+    glVertexAttribPointer(loc,3,GL_FLOAT,GL_FALSE,24,(void*)0);
+}
+
+void ShaderProgram::setAttribute(const std::string& name,unsigned int type,unsigned int offset,unsigned int n,unsigned int size)
+{
+    glVertexAttribPointer(glGetAttribLocation(id,name.c_str()),3,GL_FLOAT,GL_FALSE,24,(void*)0);
+}
+
+void ShaderProgram::enableAttribute(unsigned int loc)
+{
+    glEnableVertexAttribArray(loc);
+}
+
+void ShaderProgram::enableAttribute(const std::string& name)
+{
+    glEnableVertexAttribArray(glGetAttribLocation(id,name.c_str()));
+}
+
+void ShaderProgram::uploadUnsignedInt(const std::string &var, unsigned int val)
+{
+    unsigned int loc = glGetUniformLocation(id,var.c_str());
+    glUniform1ui(loc,val);
+}
+
 void ShaderProgram::uploadScalar(const std::string& var,float val)
 {
     unsigned int loc = glGetUniformLocation(id,var.c_str());
@@ -84,8 +110,23 @@ void ShaderProgram::uploadMat4(const std::string& var,glm::mat4 val)
     glUniformMatrix4fv(loc,1,GL_FALSE,glm::value_ptr(val));
 }
 
-void ShaderProgram::uploadLight(const std::string& var,const Light& val)
+void ShaderProgram::uploadLight(const std::string& var,const Light& val,const glm::mat4& view)
 {
-    unsigned int loc = glGetUniformBlockIndex(id,"Light[0]");
-   // glUniformBlockBinding(id,val)
+    glm::vec3 pos = val.pos;
+    glm::vec3 ldir = glm::vec3(view*glm::vec4(val.pos,1.0));
+    glm::vec3 ambient = val.amb;
+    glm::vec3 diffuse = val.diff;
+    glm::vec3 specular = val.spec;
+
+    std::string pos_string = std::string("light.pos");
+    std::string ldir_string = std::string("light.ldir");
+    std::string ambient_string = std::string("light.amb");
+    std::string diffuse_string = std::string("light.dif");
+    std::string specular_string = std::string("light.spec");
+
+    uploadVec3(pos_string.c_str(),pos);
+    uploadVec3(ldir_string.c_str(),ldir);
+    uploadVec3(ambient_string.c_str(),ambient);
+    uploadVec3(diffuse_string.c_str(),diffuse);
+    uploadVec3(specular_string.c_str(),specular);
 }

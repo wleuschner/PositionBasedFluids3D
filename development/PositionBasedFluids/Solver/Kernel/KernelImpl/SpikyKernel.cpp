@@ -12,7 +12,7 @@ float SpikyKernel::execute(const glm::vec3& r)
     {
         return 0;
     }
-    return (15.0/(M_1_PI*std::pow(h,6)))*std::pow((h-glm::length(r)),3);
+    return (15.0/(M_PI*std::pow(h,6)))*std::pow((h-glm::length(r)),3);
 }
 
 glm::vec3 SpikyKernel::grad(const glm::vec3& r)
@@ -21,6 +21,6 @@ glm::vec3 SpikyKernel::grad(const glm::vec3& r)
     {
         return glm::vec3(0.0,0.0,0.0);
     }
-    return ((float)(-45.0f/(M_1_PI*(std::pow(h,6))))*((float)std::pow((h-glm::length(r)),2))*glm::normalize(r));
+    return ((float)(-45.0f/(M_PI*(std::pow(h,6))))*((float)std::pow((h-glm::length(r)),2))*glm::normalize(r));
 }
 
