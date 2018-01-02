@@ -14,6 +14,7 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
     screenshotNo = 0;
     running = false;
+    record = false;
     format = QSurfaceFormat::defaultFormat();
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setMajorVersion(4);
@@ -33,9 +34,12 @@ void GLCanvas::simulate()
         solver->solve(particles->getParticles());
         particles->bind();
         particles->upload();
-        QImage screenshot = grabFramebuffer();
-        screenshot.save(QString("Screenshot")+QString::number(screenshotNo)+QString(".png"),"png");
-        screenshotNo++;
+        if(record)
+        {
+            QImage screenshot = grabFramebuffer();
+            screenshot.save(QString("Screenshot")+QString::number(screenshotNo)+QString(".png"),"png");
+            screenshotNo++;
+        }
 
     }
     update();
@@ -233,6 +237,17 @@ void GLCanvas::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_Down:
         camera.rotate(-0.1,camera.getStrafeVec());
+        break;
+    case Qt::Key_V:
+        if(!record)
+        {
+            screenshotNo = 0;
+            record = true;
+        }
+        else
+        {
+            record = false;
+        }
         break;
     case Qt::Key_Space:
         if(!running)

@@ -40,6 +40,7 @@ protected slots:
 private:
     unsigned int screenshotNo;
     bool running;
+    bool record;
     QTimer simulationTimer;
     QTimer updateTimer;
     QPoint mouseCoords;
