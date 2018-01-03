@@ -169,3 +169,110 @@ void PBFSolver::solve(std::vector<Particle>& particles)
     }
     spatialHashMap->clear();
 }
+
+
+void PBFSolver::setNumIterations(unsigned int iterations)
+{
+    this->iterations = iterations;
+}
+
+int PBFSolver::getNumIterations()
+{
+    return iterations;
+}
+
+void PBFSolver::setTimestep(float timestep)
+{
+    this->timestep = timestep;
+}
+
+float PBFSolver::getTimestep()
+{
+    return timestep;
+}
+
+void PBFSolver::setKernelSupport(float support)
+{
+    densityKernel->setRadius(support);
+    gradKernel->setRadius(support);
+    viscKernel->setRadius(support);
+    this->kernelSupport = support;
+    this->spatialHashMap->setNewCellSize(support);
+}
+
+float PBFSolver::getKernelSupport()
+{
+    return kernelSupport;
+}
+
+void PBFSolver::setRestDensity(float density)
+{
+    ((DensityConstraint*)this->constraints[0])->setRestDensity(density);
+    this->restDensity = density;
+}
+
+float PBFSolver::getRestDensity()
+{
+    return restDensity;
+}
+
+void PBFSolver::setArtVisc(float artVisc)
+{
+    this->artVisc = artVisc;
+}
+
+float PBFSolver::getArtVisc()
+{
+    return artVisc;
+}
+
+void PBFSolver::setArtVort(float artVort)
+{
+    this->artVort = artVort;
+}
+
+float PBFSolver::getArtVort()
+{
+    return artVort;
+}
+
+void PBFSolver::setCfmRegularization(float cfm)
+{
+    this->cfmRegularization = cfm;
+}
+
+float PBFSolver::getCfmRegularization()
+{
+    return cfmRegularization;
+}
+
+void PBFSolver::setCorrConst(float corrConst)
+{
+    this->corrConst = corrConst;
+}
+
+float PBFSolver::getCorrConst()
+{
+    return corrConst;
+}
+
+void PBFSolver::setCorrDist(float corrDist)
+{
+    this->corrDist = corrDist;
+}
+
+float PBFSolver::getCorrDist()
+{
+    return corrDist;
+}
+
+void PBFSolver::setCorrExp(float corrExp)
+{
+    this->corrExp = corrExp;
+}
+
+float PBFSolver::getCorrExp()
+{
+    return corrExp;
+}
+

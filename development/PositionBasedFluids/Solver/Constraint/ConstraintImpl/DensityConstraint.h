@@ -10,6 +10,7 @@ public:
     DensityConstraint(AbstractKernel* densityKernel,AbstractKernel* gradKernel,float restDensity);
     float execute(const Particle& x,const std::list<Particle>& particles);
     float gradientSum(const Particle& x,const std::list<Particle>& particles);
+    void setRestDensity(float density);
 private:
     float restDensity;
     AbstractKernel* densityKernel;

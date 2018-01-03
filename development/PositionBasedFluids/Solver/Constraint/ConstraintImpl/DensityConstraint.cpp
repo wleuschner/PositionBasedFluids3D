@@ -37,3 +37,8 @@ float DensityConstraint::gradientSum(const Particle& x,const std::list<Particle>
     }
     return result;
 }
+
+void DensityConstraint::setRestDensity(float density)
+{
+    this->restDensity=density;
+}

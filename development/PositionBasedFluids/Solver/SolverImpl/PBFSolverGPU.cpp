@@ -191,3 +191,111 @@ void PBFSolverGPU::solve(std::vector<Particle>& particles)
     }
     spatialHashMap->clear();
 }
+
+
+void PBFSolverGPU::setNumIterations(unsigned int iterations)
+{
+    this->iterations = iterations;
+}
+
+int PBFSolverGPU::getNumIterations()
+{
+    return iterations;
+}
+
+void PBFSolverGPU::setTimestep(float timestep)
+{
+    this->timestep = timestep;
+}
+
+float PBFSolverGPU::getTimestep()
+{
+    return timestep;
+}
+
+void PBFSolverGPU::setKernelSupport(float support)
+{
+    densityKernel->setRadius(support);
+    gradKernel->setRadius(support);
+    viscKernel->setRadius(support);
+    this->kernelSupport = support;
+    this->spatialHashMap->setNewCellSize(support);
+}
+
+float PBFSolverGPU::getKernelSupport()
+{
+    return kernelSupport;
+}
+
+void PBFSolverGPU::setRestDensity(float density)
+{
+    ((DensityConstraint*)this->constraints[0])->setRestDensity(density);
+    this->restDensity = density;
+}
+
+float PBFSolverGPU::getRestDensity()
+{
+    return restDensity;
+}
+
+void PBFSolverGPU::setArtVisc(float artVisc)
+{
+    this->artVisc = artVisc;
+}
+
+float PBFSolverGPU::getArtVisc()
+{
+    return artVisc;
+}
+
+void PBFSolverGPU::setArtVort(float artVort)
+{
+    this->artVort = artVort;
+}
+
+float PBFSolverGPU::getArtVort()
+{
+    return artVort;
+}
+
+void PBFSolverGPU::setCfmRegularization(float cfm)
+{
+    this->cfmRegularization = cfm;
+}
+
+float PBFSolverGPU::getCfmRegularization()
+{
+    return cfmRegularization;
+}
+
+void PBFSolverGPU::setCorrConst(float corrConst)
+{
+    this->corrConst = corrConst;
+}
+
+float PBFSolverGPU::getCorrConst()
+{
+    return corrConst;
+}
+
+void PBFSolverGPU::setCorrDist(float corrDist)
+{
+    this->corrDist = corrDist;
+}
+
+float PBFSolverGPU::getCorrDist()
+{
+    return corrDist;
+}
+
+void PBFSolverGPU::setCorrExp(float corrExp)
+{
+    this->corrExp = corrExp;
+}
+
+float PBFSolverGPU::getCorrExp()
+{
+    return corrExp;
+}
+
+

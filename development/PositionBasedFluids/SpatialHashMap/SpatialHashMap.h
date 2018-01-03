@@ -17,10 +17,12 @@ public:
     void insert(const Particle& p);
     std::list<unsigned int> find(const Particle &p);
     void clear();
+    void setNewCellSize(float csize);
 
 private:
     omp_lock_t* bucketLocks;
     unsigned int size;
+    float tempCellSize;
     float cellSize;
     std::vector<std::list<unsigned int>> buckets;
 };

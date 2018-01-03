@@ -4,6 +4,7 @@ SpatialHashMap3D::SpatialHashMap3D(unsigned int size,float cellSize)
 {
     this->size = size;
     this->cellSize = cellSize;
+    this->tempCellSize = cellSize;
     buckets.resize(size);
     bucketLocks = new omp_lock_t[size];
     #pragma omp parallel for
@@ -24,7 +25,7 @@ SpatialHashMap3D::~SpatialHashMap3D()
 
 void SpatialHashMap3D::insert(const Particle& p)
 {
-
+    cellSize = tempCellSize;
     unsigned int c = (((unsigned int)(std::floor(p.pos.x/cellSize)*73856093))^
                       ((unsigned int)(std::floor(p.pos.y/cellSize)*19349663))^
                       ((unsigned int)(std::floor(p.pos.z/cellSize)*83492791))) % size;
@@ -33,6 +34,7 @@ void SpatialHashMap3D::insert(const Particle& p)
 
 void SpatialHashMap3D::parallelInsert(const std::vector<Particle>& particles)
 {
+    cellSize = tempCellSize;
     #pragma omp parallel for
     for(unsigned int i=0;i<particles.size();i++)
     {
@@ -62,150 +64,112 @@ std::list<unsigned int> SpatialHashMap3D::find(const Particle &p)
     unsigned int c = 0;
 
     //Bottom Layer
-    c = (leftX^
-                      leftY^
-                      leftZ) % size;
+    c = (leftX^ leftY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
     //nList.insert(nList.end(),bucket.begin(),bucket.end());
-    c = (centerX^
-                      leftY^
-                      leftZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      leftY^
-                      leftZ) % size;
+    c = (centerX^ leftY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (leftX^
-                      leftY^
-                      centerZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      leftY^
-                      centerZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      leftY^
-                      centerZ) % size;
+    c = (rightX ^ leftY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (leftX^
-                      leftY^
-                      rightZ) % size;
+    c = (leftX ^ leftY ^ centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      leftY^
-                      rightZ) % size;
+
+    c = (centerX ^ leftY ^ centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      leftY^
-                      rightZ) % size;
+
+    c = (rightX ^ leftY ^ centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (leftX ^ leftY ^ rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (centerX ^ leftY ^ rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (rightX ^ leftY^ rightZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
     //Center Layer
-    c = (leftX^
-                      centerY^
-                      leftZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      centerY^
-                      leftZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      centerY^
-                      leftZ) % size;
+    c = (leftX ^ centerY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (leftX^
-                      centerY^
-                      centerZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      centerY^
-                      centerZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      centerY^
-                      centerZ) % size;
+    c = (centerX ^ centerY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (leftX^
-                      centerY^
-                      rightZ) % size;
+    c = (rightX ^ centerY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      centerY^
-                      rightZ) % size;
+
+    c = (leftX ^ centerY ^ centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      centerY^
-                      rightZ) % size;
+
+    c = (centerX ^ centerY ^ centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (rightX ^ centerY ^ centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (leftX ^ centerY ^ rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (centerX ^ centerY ^ rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (rightX ^ centerY ^ rightZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
     //Top Layer
-    c = (leftX^
-                      rightY^
-                      leftZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      rightY^
-                      leftZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      rightY^
-                      leftZ) % size;
+    c = (leftX ^ rightY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (leftX^
-                      rightY^
-                      centerZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      rightY^
-                      centerZ) % size;
-    bucket = buckets[c];
-    nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      rightY^
-                      centerZ) % size;
+    c = (centerX ^ rightY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
 
-    c = (leftX^
-                      rightY^
-                      rightZ) % size;
+    c = (rightX ^ rightY ^ leftZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (centerX^
-                      rightY^
-                      rightZ) % size;
+
+    c = (leftX ^ rightY ^ centerZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
-    c = (rightX^
-                      rightY^
-                      rightZ) % size;
+
+    c = (centerX ^ rightY ^ centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (rightX ^ rightY ^ centerZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (leftX ^  rightY ^ rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+
+    c = (centerX ^ rightY ^ rightZ) % size;
+    bucket = buckets[c];
+    nList.splice(nList.end(),bucket);
+    c = (rightX ^ rightY ^ rightZ) % size;
     bucket = buckets[c];
     nList.splice(nList.end(),bucket);
     return nList;
@@ -216,3 +180,9 @@ void SpatialHashMap3D::clear()
     buckets.clear();
     buckets.resize(size);
 }
+
+void SpatialHashMap3D::setNewCellSize(float csize)
+{
+    tempCellSize = csize;
+}
+
