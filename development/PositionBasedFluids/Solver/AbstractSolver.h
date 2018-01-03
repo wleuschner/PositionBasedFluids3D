@@ -13,35 +13,35 @@ public:
     virtual void init(std::vector<Particle>& particles) = 0;
     virtual void solve(std::vector<Particle>& particles) = 0;
 
-    void setNumIterations(unsigned int iterations);
-    int getNumIterations();
+    virtual void setNumIterations(unsigned int iterations);
+    virtual int getNumIterations();
 
-    void setTimestep(float timestep);
-    float getTimestep();
+    virtual void setTimestep(float timestep);
+    virtual float getTimestep();
 
-    void setKernelSupport(float support);
-    float getKernelSupport();
+    virtual void setKernelSupport(float support);
+    virtual float getKernelSupport();
 
-    void setRestDensity(float density);
-    float getRestDensity();
+    virtual void setRestDensity(float density);
+    virtual float getRestDensity();
 
-    void setArtVisc(float artVisc);
-    float getArtVisc();
+    virtual void setArtVisc(float artVisc);
+    virtual float getArtVisc();
 
-    void setArtVort(float artVort);
-    float getArtVort();
+    virtual void setArtVort(float artVort);
+    virtual float getArtVort();
 
-    void setCfmRegularization(float cfm);
-    float getCfmRegularization();
+    virtual void setCfmRegularization(float cfm);
+    virtual float getCfmRegularization();
 
-    void setCorrConst(float corrConst);
-    float getCorrConst();
+    virtual void setCorrConst(float corrConst);
+    virtual float getCorrConst();
 
-    void setCorrDist(float corrDist);
-    float getCorrDist();
+    virtual void setCorrDist(float corrDist);
+    virtual float getCorrDist();
 
-    void setCorrExp(float corrExp);
-    float getCorrExp();
+    virtual void setCorrExp(float corrExp);
+    virtual float getCorrExp();
 
 protected:
     std::vector<AbstractForce*> externalForces;
