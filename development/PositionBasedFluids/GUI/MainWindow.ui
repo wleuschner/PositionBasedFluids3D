@@ -81,7 +81,7 @@
            <double>0.000100000000000</double>
           </property>
           <property name="value">
-           <double>0.080000000000000</double>
+           <double>0.000840000000000</double>
           </property>
          </widget>
         </item>
@@ -98,11 +98,14 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="spinBoxRadius">
+          <property name="decimals">
+           <number>6</number>
+          </property>
           <property name="singleStep">
            <double>0.001000000000000</double>
           </property>
           <property name="value">
-           <double>1.500000000000000</double>
+           <double>0.500000000000000</double>
           </property>
          </widget>
         </item>
@@ -118,7 +121,23 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBox"/>
+         <widget class="QComboBox" name="comboBoxDensity">
+          <item>
+           <property name="text">
+            <string>Poly6</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Spiky</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Visc</string>
+           </property>
+          </item>
+         </widget>
         </item>
        </layout>
       </item>
@@ -132,7 +151,26 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBox_2"/>
+         <widget class="QComboBox" name="comboBoxKernel">
+          <property name="currentIndex">
+           <number>1</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>Poly6</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Spiky</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Visc</string>
+           </property>
+          </item>
+         </widget>
         </item>
        </layout>
       </item>
@@ -146,7 +184,26 @@
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="comboBox_3"/>
+         <widget class="QComboBox" name="comboBox_3">
+          <property name="currentIndex">
+           <number>2</number>
+          </property>
+          <item>
+           <property name="text">
+            <string>Poly6</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Spiky</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Visc</string>
+           </property>
+          </item>
+         </widget>
         </item>
        </layout>
       </item>
@@ -210,13 +267,13 @@
         <item>
          <widget class="QDoubleSpinBox" name="spinBoxRestDensity">
           <property name="decimals">
-           <number>1</number>
+           <number>0</number>
           </property>
           <property name="maximum">
-           <double>10000.000000000000000</double>
+           <double>10000000.000000000000000</double>
           </property>
           <property name="value">
-           <double>700.000000000000000</double>
+           <double>7440.000000000000000</double>
           </property>
          </widget>
         </item>
@@ -261,7 +318,7 @@
            <double>0.010000000000000</double>
           </property>
           <property name="value">
-           <double>0.010000000000000</double>
+           <double>0.100000000000000</double>
           </property>
          </widget>
         </item>

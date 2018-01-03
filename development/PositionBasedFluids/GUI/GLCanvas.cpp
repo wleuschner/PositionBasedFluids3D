@@ -55,9 +55,13 @@ void GLCanvas::initializeGL()
     updateTimer.setSingleShot(false);
     updateTimer.start();
 
-    Poly6Kernel* densityKernel = new Poly6Kernel(0.1f);
-    SpikyKernel* gradKernel = new SpikyKernel(0.1f);
-    ViscocityKernel* viscKernel = new ViscocityKernel(0.1f);
+    Poly6Kernel* densityKernel = new Poly6Kernel(0.5f);
+    SpikyKernel* gradKernel = new SpikyKernel(0.5f);
+    ViscocityKernel* viscKernel = new ViscocityKernel(0.5f);
+
+    kernels.push_back((AbstractKernel*)densityKernel);
+    kernels.push_back((AbstractKernel*)gradKernel);
+    kernels.push_back((AbstractKernel*)viscKernel);
 
     PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
     //PBFSolverGPU* pbf = new PBFSolverGPU((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
@@ -314,10 +318,25 @@ void GLCanvas::setCorrConst(double val)
 
 void GLCanvas::setCorrDist(double val)
 {
-
+    solver->setCorrDist(val);
 }
 
 void GLCanvas::setCorrExp(double val)
 {
+    solver->setCorrExp(val);
+}
 
+void GLCanvas::setDensityKernel(int index)
+{
+    solver->setDensityKernel(index);
+}
+
+void GLCanvas::setGradKernel(int index)
+{
+    solver->setDensityKernel(index);
+}
+
+void GLCanvas::setViscKernel(int index)
+{
+    solver->setViscKernel(index);
 }

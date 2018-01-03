@@ -12,10 +12,10 @@ AbstractSolver::AbstractSolver(AbstractKernel* densityKernel,AbstractKernel* gra
     GravityForce* grav = new GravityForce();
     this->externalForces.push_back((AbstractForce*)grav);
     this->cfmRegularization = 1500;
-    this->artVisc = 0.2;
+    this->artVisc = 0.01;
     this->artVort = 0.01;
-    this->corrConst = 0.06;
-    this->corrExp = 2;
+    this->corrConst = 0.01;
+    this->corrExp = 4;
     this->corrDist = 0.01;
     this->kernelSupport=densityKernel->getRadius();
 }

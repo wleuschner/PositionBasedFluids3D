@@ -192,6 +192,20 @@ void PBFSolverGPU::solve(std::vector<Particle>& particles)
     spatialHashMap->clear();
 }
 
+void PBFSolverGPU::setDensityKernel(int id)
+{
+
+}
+
+void PBFSolverGPU::setGradKernel(int id)
+{
+
+}
+
+void PBFSolverGPU::setViscKernel(int id)
+{
+
+}
 
 void PBFSolverGPU::setNumIterations(unsigned int iterations)
 {

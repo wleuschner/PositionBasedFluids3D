@@ -35,6 +35,9 @@ protected slots:
     void setCorrConst(double val);
     void setCorrDist(double val);
     void setCorrExp(double val);
+    void setDensityKernel(int index);
+    void setGradKernel(int index);
+    void setViscKernel(int index);
 
     void simulate();
 private:
@@ -46,6 +49,7 @@ private:
     QPoint mouseCoords;
 
     AbstractSolver* solver;
+    std::vector<AbstractKernel*> kernels;
 
     QSurfaceFormat format;
     Camera camera;

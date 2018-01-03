@@ -170,6 +170,20 @@ void PBFSolver::solve(std::vector<Particle>& particles)
     spatialHashMap->clear();
 }
 
+void PBFSolver::setDensityKernel(int id)
+{
+
+}
+
+void PBFSolver::setGradKernel(int id)
+{
+
+}
+
+void PBFSolver::setViscKernel(int id)
+{
+
+}
 
 void PBFSolver::setNumIterations(unsigned int iterations)
 {

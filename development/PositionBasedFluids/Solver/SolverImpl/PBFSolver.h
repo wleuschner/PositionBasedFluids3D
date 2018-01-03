@@ -14,6 +14,10 @@ public:
     void init(std::vector<Particle>& particles);
     void solve(std::vector<Particle>& particles);
 
+    void setDensityKernel(int id);
+    void setGradKernel(int id);
+    void setViscKernel(int id);
+
     void setNumIterations(unsigned int iterations);
     int getNumIterations();
 

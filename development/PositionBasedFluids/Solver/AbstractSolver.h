@@ -13,6 +13,10 @@ public:
     virtual void init(std::vector<Particle>& particles) = 0;
     virtual void solve(std::vector<Particle>& particles) = 0;
 
+    virtual void setDensityKernel(int id)=0;
+    virtual void setGradKernel(int id)=0;
+    virtual void setViscKernel(int id)=0;
+
     virtual void setNumIterations(unsigned int iterations)=0;
     virtual int getNumIterations()=0;
 
