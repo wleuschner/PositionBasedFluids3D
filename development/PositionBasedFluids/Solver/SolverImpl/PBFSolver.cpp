@@ -95,25 +95,25 @@ void PBFSolver::solve(std::vector<Particle>& particles)
             }
             displacement[p] = invRestDensity*displacement[p];
 
-            /*for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
+            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
-                if(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*0.05<0.0)
+                if(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*particleSize<0.0)
                 {
-                    displacement[p] += -0.5f*(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*0.05f)*glm::normalize((particles[p].tempPos+displacement[p])-n->pos);
+                    displacement[p] += -1.0f*(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*particleSize)*glm::normalize((particles[p].tempPos+displacement[p])-n->pos);
                 }
-            }*/
+            }
             if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<0)
             {
                 //std::cout<<glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<<std::endl;
                 displacement[p] = -1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+0.5f)*glm::vec3(0.0,1.0,0.0);
             }
-            /*
+
             if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0))+1.5f<0)
             {
                 //std::cout<<((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+1.0f)<<std::endl;
                 displacement[p] =-1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0)))+1.5f)*glm::vec3(0.0,-1.0,0.0);
                 //displacement[p]-=particles[p].tempPos;
-            }*/
+            }
 
             if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.0f<0)
             {
@@ -290,3 +290,12 @@ float PBFSolver::getCorrExp()
     return corrExp;
 }
 
+void PBFSolver::setPartSize(float size)
+{
+    this->particleSize=size;
+}
+
+float PBFSolver::getPartSize()
+{
+    return particleSize;
+}

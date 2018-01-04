@@ -13,6 +13,7 @@
 
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
+    particleSize = 0.005;
     screenshotNo = 0;
     running = false;
     record = false;
@@ -108,7 +109,7 @@ void GLCanvas::initializeGL()
     //Create Sphere Model
     sphere = new Model();
     //sphere->load("Resources/sphere.obj");
-    sphere = Model::createSphere(0.1,16,16);
+    sphere = Model::createSphere(1.0,16,16);
 
     sphere->bind();
 
@@ -158,6 +159,7 @@ void GLCanvas::paintGL()
     glm::mat4 modelView = view*model;
     glm::mat4 pvm = projection*modelView;
     glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
+    program->uploadScalar("particleSize",particleSize);
     program->uploadMat4("modelView",modelView);
     program->uploadMat4("pvm",pvm);
     program->uploadMat4("view",view);
@@ -289,6 +291,11 @@ void GLCanvas::setTimestep(double val)
 void GLCanvas::setKernelSupport(double val)
 {
     solver->setKernelSupport(val);
+}
+
+void GLCanvas::setParticleSize(double val)
+{
+    this->particleSize = val;
 }
 
 void GLCanvas::setRestDensity(double val)

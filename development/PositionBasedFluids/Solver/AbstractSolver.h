@@ -47,11 +47,15 @@ public:
     virtual void setCorrExp(float corrExp)=0;
     virtual float getCorrExp()=0;
 
+    virtual void setPartSize(float size)=0;
+    virtual float getPartSize()=0;
+
 protected:
     std::vector<AbstractForce*> externalForces;
     float timestep;
     unsigned int iterations;
     float kernelSupport;
+    float particleSize;
     float restDensity;
     float artVisc;
     float artVort;
@@ -59,6 +63,7 @@ protected:
     float corrConst;
     float corrDist;
     float corrExp;
+    float partSize;
 
     AbstractKernel* densityKernel;
     AbstractKernel* gradKernel;

@@ -28,6 +28,7 @@ protected slots:
     void setNumIterations(int val);
     void setTimestep(double val);
     void setKernelSupport(double val);
+    void setParticleSize(double val);
     void setRestDensity(double val);
     void setArtVisc(double val);
     void setArtVort(double val);
@@ -56,6 +57,8 @@ private:
     ShaderProgram* program;
     ParticleBuffer* particles;
     unsigned int vao;
+
+    float particleSize;
 
     Light light;
     Model *sphere;

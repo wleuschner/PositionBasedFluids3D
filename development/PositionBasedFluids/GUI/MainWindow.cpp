@@ -5,6 +5,7 @@ MainWindow::MainWindow()
     ui.setupUi(this);
     connect(ui.spinBoxIterations,SIGNAL(valueChanged(int)),ui.widget,SLOT(setNumIterations(int)));
     connect(ui.spinBoxRadius,SIGNAL(valueChanged(double)),ui.widget,SLOT(setKernelSupport(double)));
+    connect(ui.spinBoxParticleSize,SIGNAL(valueChanged(double)),ui.widget,SLOT(setParticleSize(double)));
     connect(ui.spinBoxTimeStep,SIGNAL(valueChanged(double)),ui.widget,SLOT(setTimestep(double)));
     connect(ui.spinBoxRestDensity,SIGNAL(valueChanged(double)),ui.widget,SLOT(setRestDensity(double)));
 

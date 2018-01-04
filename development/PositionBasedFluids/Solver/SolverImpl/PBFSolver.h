@@ -47,6 +47,9 @@ public:
 
     void setCorrExp(float corrExp);
     float getCorrExp();
+
+    void setPartSize(float size);
+    float getPartSize();
 private:
 
     std::vector<AbstractConstraint*> constraints;
