@@ -90,6 +90,7 @@ void PBFSolver::solve(std::vector<Particle>& particles)
         for(unsigned int p=0;p<particles.size();p++)
         {
             displacement[p] = glm::vec3(0.0,0.0,0.0);
+
             for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
                 float sCorr = -corrConst*std::pow((densityKernel->execute(particles[p].tempPos-n->pos)/densityKernel->execute(glm::vec3(kernelSupport,0.0,0.0)*corrDist)),corrExp);
@@ -98,33 +99,15 @@ void PBFSolver::solve(std::vector<Particle>& particles)
             }
             displacement[p] = invRestDensity*displacement[p];
 
-            /*
-            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
-            {
-                if(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*particleSize<0.0)
-                {
-                    glm::vec3 c  = n->pos - (particles[p].pos);
-                    glm::vec3 v  = (particles[p].tempPos+displacement[p])-particles[p].pos;
-                    glm::vec3 n1 = glm::normalize(v);
-                    std::cout<<"N:"<<n1.x<<" "<<n1.y<<" "<<n1.z<<std::endl;
-                    float d  = glm::dot(n1,c);
-                    std::cout<<"DOTC:"<<glm::dot(c,c)<<" "<<d*d<<std::endl;
-                    float f = std::sqrt(glm::dot(c,c)-(d*d));
-                    float t = std::sqrt(std::pow(2.0*particleSize,2)-std::pow(f,2));
-                    float corr = (d-t);
-                    std::cout<<"CORR:"<<corr<<std::endl;
-                    displacement[p] = particles[p].pos+corr*n1-particles[p].tempPos;
-                    //displacement[p] += -1.0f*(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*particleSize)*glm::normalize((particles[p].tempPos+displacement[p])-n->pos);
-                }
-            }*/
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<0)
+
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+1.5f<0)
             {
                 //std::cout<<glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<<std::endl;
                 //displacement[p] = -1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+0.5f)*glm::vec3(0.0,1.0,0.0);
 
                 glm::vec3 n1 = glm::vec3(0.0,1.0,0.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(0.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
 
@@ -169,6 +152,29 @@ void PBFSolver::solve(std::vector<Particle>& particles)
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
                 float t = -(1.0+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
+            }
+
+            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
+            {
+                //std::cout<<"TEST"<<std::endl;
+                glm::vec3 dVec = particles[p].tempPos+displacement[p]-n->pos;
+                float rSumSquared = (2*particleSize)*(2*particleSize);
+                //std::cout<<glm::length(dVec)<<" "<<rSumSquared<<" "<<particleSize<<std::endl;
+                if(glm::dot(dVec,dVec)<rSumSquared)
+                {
+                    glm::vec3 c  = n->pos - (particles[p].pos);
+                    glm::vec3 v  = (dVec)-particles[p].pos;
+                    glm::vec3 n1 = glm::normalize(v);
+                    float d  = glm::dot(n1,c);
+                    float f = glm::dot(c,c)-(d*d);
+                    if(f<rSumSquared)
+                    {
+                        float t = std::sqrt(rSumSquared-f);
+                        float corr = (d-t);
+                        displacement[p] = particles[p].pos+(corr*v)-particles[p].tempPos;
+                    }
+                    //displacement[p] += -1.0f*(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*particleSize)*glm::normalize((particles[p].tempPos+displacement[p])-n->pos);
+                }
             }
         }
 

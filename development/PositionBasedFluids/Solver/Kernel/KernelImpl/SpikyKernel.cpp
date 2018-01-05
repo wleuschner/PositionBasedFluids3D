@@ -1,5 +1,6 @@
 #include"SpikyKernel.h"
 #include<cmath>
+#include<iostream>
 
 SpikyKernel::SpikyKernel(float h) : AbstractKernel(h)
 {
@@ -12,7 +13,12 @@ float SpikyKernel::execute(const glm::vec3& r)
     {
         return 0;
     }
-    return (15.0/(M_PI*std::pow(h,6)))*std::pow((h-glm::length(r)),3);
+    float result = (15.0/(M_PI*std::pow(h,6)))*std::pow((h-glm::length(r)),3);
+    if(result!=result)
+    {
+        std::cout<<"GRAD KERNEL BROKEN"<<std::endl;
+    }
+    return result;
 }
 
 glm::vec3 SpikyKernel::grad(const glm::vec3& r)

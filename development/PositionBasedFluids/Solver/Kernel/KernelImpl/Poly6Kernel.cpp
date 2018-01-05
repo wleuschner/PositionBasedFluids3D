@@ -16,14 +16,14 @@ float Poly6Kernel::execute(const glm::vec3& r)
     float result = (315.0/(64*M_PI*std::pow(h,9)))*std::pow((h*h-glm::dot(r,r)),3);
     if(result!=result)
     {
-        std::cout<<"KERNEL BROKEN"<<std::endl;
+        std::cout<<"DENS KERNEL BROKEN "<<result<<" "<<r.x<<" "<<r.y<<" "<<r.z<<std::endl;
     }
     return result;
 }
 
 glm::vec3 Poly6Kernel::grad(const glm::vec3& r)
 {
-    if(glm::length(r)>=h)
+    if(glm::length(r)>h)
     {
         return glm::vec3(0.0,0.0,0.0);
     }

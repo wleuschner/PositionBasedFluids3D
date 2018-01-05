@@ -64,7 +64,7 @@ void GLCanvas::initializeGL()
     kernels.push_back((AbstractKernel*)gradKernel);
     kernels.push_back((AbstractKernel*)viscKernel);
 
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
+    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
     //PBFSolverGPU* pbf = new PBFSolverGPU((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
 
@@ -295,6 +295,7 @@ void GLCanvas::setKernelSupport(double val)
 
 void GLCanvas::setParticleSize(double val)
 {
+    solver->setPartSize(val);
     this->particleSize = val;
 }
 
