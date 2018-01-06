@@ -158,8 +158,8 @@ void Model::draw(ShaderProgram* shader)
 Model* Model::createSphere(float radius,int stacks,int slices)
 {
     Model *model = new Model();
-    float angle1_inc = (M_PI)/(stacks-1);
-    float angle2_inc = (2*M_PI)/(slices-1);
+    float angle1_inc = (2*M_PI)/(slices-1);
+    float angle2_inc = (M_PI)/(stacks-1);
     float angle1 = 0.0;
     for(int y=0;y<stacks;y++,angle1+=angle1_inc)
     {

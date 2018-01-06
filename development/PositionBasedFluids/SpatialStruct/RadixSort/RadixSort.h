@@ -23,6 +23,7 @@ private:
     AABB aabb;
     glm::ivec3 dimSize;
     float cellSize;
+
     std::vector<unsigned int> sortedIndices;
     std::vector<unsigned int> histogram;
 };

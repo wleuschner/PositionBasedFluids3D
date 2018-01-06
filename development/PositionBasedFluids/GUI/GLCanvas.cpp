@@ -52,7 +52,7 @@ void GLCanvas::initializeGL()
 {
     glewInit();
 
-    updateTimer.setInterval(1000.0/30);
+    updateTimer.setInterval(1000.0/60);
     updateTimer.setSingleShot(false);
     updateTimer.start();
 
@@ -72,8 +72,9 @@ void GLCanvas::initializeGL()
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_DEPTH_TEST);
 
-    glCullFace(GL_CCW);
+    glCullFace(GL_BACK);
     glEnable(GL_CULL_FACE);
+    //glDisable(GL_CULL_FACE);
 
 
     glEnableClientState(GL_VERTEX_ARRAY);
