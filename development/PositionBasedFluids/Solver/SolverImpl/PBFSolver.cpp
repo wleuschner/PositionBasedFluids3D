@@ -102,7 +102,7 @@ void PBFSolver::solve()
             }
             displacement[p] = invRestDensity*displacement[p];
 
-            bool first=true;
+            float minDist = std::numeric_limits<float>::infinity();
             for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
             {
                 glm::vec3 dVec = n->pos-(particles[p].tempPos+displacement[p]);
@@ -116,9 +116,14 @@ void PBFSolver::solve()
                 {
                     float f = glm::dot(c,c)-(d*d);
                     float t = std::sqrt(rSumSquared-f);
-                    float corr = (d-t);
-                    glm::vec3 tempDispl = particles[p].pos+(t*v)-particles[p].tempPos;
-                    displacement[p] = tempDispl;
+                    float d = glm::dot(t*v,n1);
+                    if(d<minDist)
+                    {
+                        float corr = (d-t);
+                        glm::vec3 tempDispl = particles[p].pos+(t*v)-particles[p].tempPos;
+                        displacement[p] = tempDispl;
+                        minDist=d;
+                    }
                 }
             }
 
