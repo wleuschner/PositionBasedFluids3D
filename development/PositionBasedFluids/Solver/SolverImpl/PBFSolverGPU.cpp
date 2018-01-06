@@ -74,6 +74,10 @@ void PBFSolverGPU::solve()
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
     computeProgram->uploadUnsignedInt("taskId",0);
     computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->uploadUnsignedInt("taskId",2);
+    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->uploadUnsignedInt("taskId",3);
+    computeProgram->dispatch(particles.size(),1,1);
     computeProgram->uploadUnsignedInt("taskId",1);
     computeProgram->dispatch(particles.size(),1,1);
     glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );

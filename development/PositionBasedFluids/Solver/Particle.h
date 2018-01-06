@@ -26,6 +26,8 @@ public:
     float curPad;
     glm::vec3 tempPos; //66
     float tempPosPad;
+    glm::vec3 displacement;
+    float displacementPad;
 
     //float pad[3]; //
 };

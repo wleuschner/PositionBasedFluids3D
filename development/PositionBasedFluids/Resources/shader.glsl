@@ -13,6 +13,7 @@ struct Particle
 
     vec3 curl;
     vec3 tempPos;
+    vec3 displacement;
 };
 
 uniform uint taskId;
@@ -49,8 +50,51 @@ void main()
         outBuffer.particles[gId].pos = outBuffer.particles[gId].tempPos;
         break;
     case 2:
+        if(dot((outBuffer.particles[gId].tempPos),vec3(0.0,1.0,0.0))+0.5f<0.0)
+        {
+            vec3 n1 = vec3(0.0,1.0,0.0);
+            vec3 r = normalize((outBuffer.particles[gId].tempPos)-outBuffer.particles[gId].pos);
+            float t = -(0.5+dot(n1,outBuffer.particles[gId].pos))/dot(n1,r);
+            outBuffer.particles[gId].displacement = outBuffer.particles[gId].pos+(r*t)-outBuffer.particles[gId].tempPos;
+        }
+        if(dot((outBuffer.particles[gId].tempPos),vec3(0.0,-1.0,0.0))+1.5f<0.0)
+        {
+            vec3 n1 = vec3(0.0,-1.0,0.0);
+            vec3 r = normalize((outBuffer.particles[gId].tempPos)-outBuffer.particles[gId].pos);
+            float t = -(1.5+dot(n1,outBuffer.particles[gId].pos))/dot(n1,r);
+            outBuffer.particles[gId].displacement = outBuffer.particles[gId].pos+(r*t)-outBuffer.particles[gId].tempPos;
+        }
+        if(dot((outBuffer.particles[gId].tempPos),vec3(-1.0,0.0,0.0))+1.0f<0.0)
+        {
+            vec3 n1 = vec3(-1.0,0.0,0.0);
+            vec3 r = normalize((outBuffer.particles[gId].tempPos)-outBuffer.particles[gId].pos);
+            float t = -(1.0+dot(n1,outBuffer.particles[gId].pos))/dot(n1,r);
+            outBuffer.particles[gId].displacement = outBuffer.particles[gId].pos+(r*t)-outBuffer.particles[gId].tempPos;
+        }
+        if(dot((outBuffer.particles[gId].tempPos),vec3(1.0,0.0,0.0))+1.0f<0.0)
+        {
+            vec3 n1 = vec3(1.0,0.0,0.0);
+            vec3 r = normalize((outBuffer.particles[gId].tempPos)-outBuffer.particles[gId].pos);
+            float t = -(1.0+dot(n1,outBuffer.particles[gId].pos))/dot(n1,r);
+            outBuffer.particles[gId].displacement = outBuffer.particles[gId].pos+(r*t)-outBuffer.particles[gId].tempPos;
+        }
+        if(dot((outBuffer.particles[gId].tempPos),vec3(0.0,0.0,-1.0))+1.0f<0.0)
+        {
+            vec3 n1 = vec3(0.0,0.0,-1.0);
+            vec3 r = normalize((outBuffer.particles[gId].tempPos)-outBuffer.particles[gId].pos);
+            float t = -(1.0+dot(n1,outBuffer.particles[gId].pos))/dot(n1,r);
+            outBuffer.particles[gId].displacement = outBuffer.particles[gId].pos+(r*t)-outBuffer.particles[gId].tempPos;
+        }
+        if(dot((outBuffer.particles[gId].tempPos),vec3(0.0,0.0,1.0))+1.0f<0.0)
+        {
+            vec3 n1 = vec3(0.0,0.0,1.0);
+            vec3 r = normalize((outBuffer.particles[gId].tempPos)-outBuffer.particles[gId].pos);
+            float t = -(1.0+dot(n1,outBuffer.particles[gId].pos))/dot(n1,r);
+            outBuffer.particles[gId].displacement = outBuffer.particles[gId].pos+(r*t)-outBuffer.particles[gId].tempPos;
+        }
         break;
     case 3:
+        outBuffer.particles[gId].tempPos = outBuffer.particles[gId].tempPos + outBuffer.particles[gId].displacement;
         break;
     case 4:
         break;
