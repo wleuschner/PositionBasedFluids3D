@@ -17,6 +17,7 @@ public:
     float density;
     glm::vec3 curl;
     glm::vec3 tempPos;
+    unsigned int bucket;
 };
 
 #endif

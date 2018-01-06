@@ -10,7 +10,7 @@ add_subdirectory("ParticleBuffer")
 add_subdirectory("Camera")
 add_subdirectory("Model")
 add_subdirectory("Material")
-
+add_subdirectory("AABB")
 
 set(HEADERS
    ${HEADERS}

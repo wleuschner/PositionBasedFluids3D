@@ -33,7 +33,7 @@ void GLCanvas::simulate()
     updateTimer.stop();
     if(running)
     {
-        solver->solve(particles->getParticles());
+        solver->solve();
         particles->bind();
         particles->upload();
         if(record)
@@ -63,10 +63,6 @@ void GLCanvas::initializeGL()
     kernels.push_back((AbstractKernel*)densityKernel);
     kernels.push_back((AbstractKernel*)gradKernel);
     kernels.push_back((AbstractKernel*)viscKernel);
-
-    PBFSolver* pbf = new PBFSolver((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
-    //PBFSolverGPU* pbf = new PBFSolverGPU((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
-    solver = (AbstractSolver*)pbf;
 
     glGenVertexArrays(1,&vao);
     glBindVertexArray(vao);
@@ -137,6 +133,9 @@ void GLCanvas::initializeGL()
             }
         }
     }
+    PBFSolver* pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
+    //PBFSolverGPU* pbf = new PBFSolverGPU((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
+    solver = (AbstractSolver*)pbf;
     //particles->addParticle(Particle(0,glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
     particles->upload();
 

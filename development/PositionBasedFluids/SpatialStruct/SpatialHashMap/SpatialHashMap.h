@@ -5,16 +5,16 @@
 #include<vector>
 #include<list>
 #include<omp.h>
-#include"../Solver/Particle.h"
+#include"../AbstractSpatialStruct.h"
+#include"../../Solver/Particle.h"
 
-class SpatialHashMap3D
+class SpatialHashMap3D : public AbstractSpatialStruct
 {
 public:
-    SpatialHashMap3D(unsigned int size,float cellSize);
+    SpatialHashMap3D(std::vector<Particle>& particles,unsigned int size,float cellSize);
     ~SpatialHashMap3D();
 
-    void parallelInsert(const std::vector<Particle>& particles);
-    void insert(const Particle& p);
+    void update();
     std::list<unsigned int> find(const Particle &p);
     void clear();
     void setNewCellSize(float csize);

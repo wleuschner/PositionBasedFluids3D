@@ -1,7 +1,7 @@
 #include"AbstractSolver.h"
 #include"Force/ForceImpl/GravityForce.h"
 
-AbstractSolver::AbstractSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel)
+AbstractSolver::AbstractSolver(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel) : particles(particles)
 {
     this->restDensity = 7440.0;
     this->iterations = 4;

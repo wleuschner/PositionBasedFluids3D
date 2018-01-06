@@ -1,41 +1,44 @@
 #include"PBFSolver.h"
 #include"../Constraint/ConstraintImpl/DensityConstraint.h"
+#include"../../SpatialStruct/RadixSort/RadixSort.h"
+#include"../../SpatialStruct/SpatialHashMap/SpatialHashMap.h"
 #include<glm/gtx/intersect.hpp>
 #include<list>
 #include<iostream>
 
-PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
+PBFSolver::PBFSolver(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(particles,densityKernel,gradKernel,viscKernel)
 {
-    this->spatialHashMap = new SpatialHashMap3D(2000,densityKernel->getRadius());
+    //this->spatialHashMap = (AbstractSpatialStruct*)new SpatialHashMap3D(particles,2000,densityKernel->getRadius());
+    this->spatialHashMap = (AbstractSpatialStruct*)new RadixSort(particles,densityKernel->getRadius(),AABB(glm::vec3(-1.2,-0.7,-1.2),glm::vec3(1.2,1.7,1.2)));
     DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
 }
 
-PBFSolver::PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver(densityKernel,gradKernel,viscKernel)
+PBFSolver::PBFSolver(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations) : AbstractSolver(particles,densityKernel,gradKernel,viscKernel)
 {
     this->constraints = constraints;
-    this->spatialHashMap = new SpatialHashMap3D(50000,densityKernel->getRadius());
+    this->spatialHashMap = (AbstractSpatialStruct*)new SpatialHashMap3D(particles,50000,densityKernel->getRadius());
     DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
 }
 
-void PBFSolver::init(std::vector<Particle>& particles)
+void PBFSolver::init()
 {
 
     /*for(unsigned int p=0;p<particles.size();p++)
     {
         this->spatialHashMap->insert(particles[p]);
     }*/
-    this->spatialHashMap->parallelInsert(particles);
+    this->spatialHashMap->update();
 }
 
-void PBFSolver::solve(std::vector<Particle>& particles)
+void PBFSolver::solve()
 {
     std::vector<std::list<Particle>> neighbors(particles.size());
     std::vector<glm::vec3> displacement(particles.size());
 
     //Apply external forces
-    init(particles);
+    init();
     #pragma omp parallel for
     for(unsigned int p=0;p<particles.size();p++)
     {
@@ -100,14 +103,14 @@ void PBFSolver::solve(std::vector<Particle>& particles)
             displacement[p] = invRestDensity*displacement[p];
 
 
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+1.5f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<0)
             {
                 //std::cout<<glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<<std::endl;
                 //displacement[p] = -1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+0.5f)*glm::vec3(0.0,1.0,0.0);
 
                 glm::vec3 n1 = glm::vec3(0.0,1.0,0.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(1.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(0.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
 

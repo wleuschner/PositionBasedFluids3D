@@ -15,7 +15,7 @@ find_package(Qt5Widgets)
 find_package(Qt5OpenGL)
 
 add_subdirectory("Solver")
-add_subdirectory("SpatialHashMap")
+add_subdirectory("SpatialStruct")
 add_subdirectory("GUI")
 add_subdirectory("Graphics")
 add_subdirectory("Resources")

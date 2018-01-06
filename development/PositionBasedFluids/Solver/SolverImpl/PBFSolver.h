@@ -2,17 +2,17 @@
 #define __PBF_SOLVER_H
 #include"../AbstractSolver.h"
 #include"../Constraint/AbstractConstraint.h"
-#include"../../SpatialHashMap/SpatialHashMap.h"
+#include"../../SpatialStruct/AbstractSpatialStruct.h"
 
 class PBFSolver : AbstractSolver
 {
 public:
-    PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations=4);
-    PBFSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations=4);
+    PBFSolver(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations=4);
+    PBFSolver(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,std::vector<AbstractConstraint*> constraints,float timestep,int iterations=4);
 
 
-    void init(std::vector<Particle>& particles);
-    void solve(std::vector<Particle>& particles);
+    void init();
+    void solve();
 
     void setDensityKernel(int id);
     void setGradKernel(int id);
@@ -53,7 +53,7 @@ public:
 private:
 
     std::vector<AbstractConstraint*> constraints;
-    SpatialHashMap3D* spatialHashMap;
+    AbstractSpatialStruct* spatialHashMap;
 };
 
 #endif

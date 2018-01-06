@@ -8,10 +8,10 @@
 class AbstractSolver
 {
 public:
-    AbstractSolver(AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel);
+    AbstractSolver(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel);
 
-    virtual void init(std::vector<Particle>& particles) = 0;
-    virtual void solve(std::vector<Particle>& particles) = 0;
+    virtual void init() = 0;
+    virtual void solve() = 0;
 
     virtual void setDensityKernel(int id)=0;
     virtual void setGradKernel(int id)=0;
@@ -64,6 +64,8 @@ protected:
     float corrDist;
     float corrExp;
     float partSize;
+
+    std::vector<Particle>& particles;
 
     AbstractKernel* densityKernel;
     AbstractKernel* gradKernel;
