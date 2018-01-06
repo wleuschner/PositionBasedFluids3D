@@ -9,6 +9,10 @@
 #include"../Graphics/Camera/Camera.h"
 #include"../Graphics/Model/Model.h"
 #include"../Solver/AbstractSolver.h"
+#include"../Solver/SolverImpl/PBFSolver.h"
+#include"../Solver/SolverImpl/PBFSolverGPU.h"
+
+
 
 class GLCanvas : public QOpenGLWidget
 {
@@ -39,16 +43,20 @@ protected slots:
     void setDensityKernel(int index);
     void setGradKernel(int index);
     void setViscKernel(int index);
+    void setGPU(int state);
 
     void simulate();
 private:
     unsigned int screenshotNo;
     bool running;
     bool record;
+    bool gpu;
     QTimer simulationTimer;
     QTimer updateTimer;
     QPoint mouseCoords;
 
+    PBFSolver* pbf;
+    PBFSolverGPU* pbfGpu;
     AbstractSolver* solver;
     std::vector<AbstractKernel*> kernels;
 

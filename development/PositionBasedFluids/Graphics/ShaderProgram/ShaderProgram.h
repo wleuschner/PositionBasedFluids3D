@@ -33,6 +33,8 @@ public:
     void uploadMat4(const std::string& var,glm::mat4 val);
     void uploadLight(const std::string& var,const Light& val,const glm::mat4& view);
 
+    //Compute Shader
+    void dispatch(unsigned int wx,unsigned int wy,unsigned wz);
 private:
     unsigned int id;
 };

@@ -17,6 +17,7 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     screenshotNo = 0;
     running = false;
     record = false;
+    gpu = false;
     format = QSurfaceFormat::defaultFormat();
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setMajorVersion(4);
@@ -35,7 +36,10 @@ void GLCanvas::simulate()
     {
         solver->solve();
         particles->bind();
-        particles->upload();
+        if(!gpu)
+        {
+            particles->upload();
+        }
         if(record)
         {
             QImage screenshot = grabFramebuffer();
@@ -134,15 +138,15 @@ void GLCanvas::initializeGL()
             }
         }
     }
-    PBFSolver* pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
-    //PBFSolverGPU* pbf = new PBFSolverGPU((AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
+    pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
+    pbfGpu = new PBFSolverGPU(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
     //particles->addParticle(Particle(0,glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
     particles->upload();
 
-    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)sizeof(unsigned int));
+    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)36);
+    glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(3);
 
     glVertexAttribDivisor(0,0);
@@ -347,4 +351,18 @@ void GLCanvas::setGradKernel(int index)
 void GLCanvas::setViscKernel(int index)
 {
     solver->setViscKernel(index);
+}
+
+void GLCanvas::setGPU(int state)
+{
+    if(state)
+    {
+        this->gpu = true;
+        solver = (AbstractSolver*)pbfGpu;
+    }
+    else
+    {
+        this->gpu = false;
+        solver = (AbstractSolver*)pbf;
+    }
 }

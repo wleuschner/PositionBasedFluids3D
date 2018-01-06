@@ -2,11 +2,15 @@
 
 struct Particle
 {
-    vec3 pos;
-    vec3 vel;
+    uint index;
+    uint bucket;
     float lambda;
     float mass;
     float density;
+
+    vec3 pos;
+    vec3 vel;
+
     vec3 curl;
     vec3 tempPos;
 };
@@ -23,7 +27,7 @@ uniform float corrConst;
 uniform float corrDist;
 uniform float corrExp;
 
-layout (packed,binding=0) buffer destBuffer
+layout (std430,binding=0) buffer destBuffer
 {
     Particle particles[];
 } outBuffer;
@@ -37,10 +41,12 @@ void main()
     {
     //Apply external forces
     case 0:
-        outBuffer.particles[gId].vel += timestep*vec3(0.0,-9.81,0.0);
+        outBuffer.particles[gId].vel += vec3(0.0,-9.81,0.0);
         outBuffer.particles[gId].tempPos = outBuffer.particles[gId].pos + timestep*outBuffer.particles[gId].vel;
         break;
     case 1:
+        outBuffer.particles[gId].vel += (1.0/timestep)*(outBuffer.particles[gId].tempPos-outBuffer.particles[gId].pos);
+        outBuffer.particles[gId].pos = outBuffer.particles[gId].tempPos;
         break;
     case 2:
         break;
@@ -52,12 +58,9 @@ void main()
         break;
     //Velocity update
     case 6:
-        outBuffer.particles[gId].vel += (1.0/timestep)*(outBuffer.particles[gId].tempPos-outBuffer.particles[gId].pos);
         break;
     //Velocity correction
     case 7:
-        outBuffer.particles[gId].vel += timestep*vec3(0.0,-9.81,0.0);
-        outBuffer.particles[gId].pos = outBuffer.particles[gId].tempPos;
         break;
     }
 }

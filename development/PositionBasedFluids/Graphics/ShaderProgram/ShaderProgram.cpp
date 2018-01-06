@@ -130,3 +130,8 @@ void ShaderProgram::uploadLight(const std::string& var,const Light& val,const gl
     uploadVec3(diffuse_string.c_str(),diffuse);
     uploadVec3(specular_string.c_str(),specular);
 }
+
+void ShaderProgram::dispatch(unsigned int wx,unsigned int wy,unsigned wz)
+{
+    glDispatchCompute(wx,wy,wz);
+}

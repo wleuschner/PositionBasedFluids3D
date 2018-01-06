@@ -9,6 +9,7 @@ ParticleBuffer::ParticleBuffer()
 void ParticleBuffer::bind()
 {
     glBindBuffer(GL_ARRAY_BUFFER,id);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,0,id);
 }
 
 void ParticleBuffer::addParticle(Particle particle)

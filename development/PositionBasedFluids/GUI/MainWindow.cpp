@@ -15,4 +15,5 @@ MainWindow::MainWindow()
     connect(ui.spinBoxCorrConst,SIGNAL(valueChanged(double)),ui.widget,SLOT(setCorrConst(double)));
     connect(ui.spinBoxCorrDist,SIGNAL(valueChanged(double)),ui.widget,SLOT(setCorrDist(double)));
     connect(ui.spinBoxCorrExp,SIGNAL(valueChanged(double)),ui.widget,SLOT(setCorrExp(double)));
+    connect(ui.checkBoxGPU,SIGNAL(stateChanged(int)),ui.widget,SLOT(setGPU(int)));
 }

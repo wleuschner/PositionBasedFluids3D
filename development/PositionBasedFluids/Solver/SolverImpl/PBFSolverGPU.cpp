@@ -43,6 +43,7 @@ void PBFSolverGPU::init()
 
 void PBFSolverGPU::solve()
 {
+    computeProgram->bind();
     computeProgram->uploadScalar("timestep",timestep);
     computeProgram->uploadUnsignedInt("iterations",iterations);
     computeProgram->uploadScalar("kernelSupport",kernelSupport);
@@ -59,7 +60,7 @@ void PBFSolverGPU::solve()
 
     //Apply external forces
     init();
-    #pragma omp parallel for
+    /*#pragma omp parallel for
     for(unsigned int p=0;p<particles.size();p++)
     {
         glm::vec3 accForces = glm::vec3(0.0,0.0,0.0);
@@ -69,127 +70,13 @@ void PBFSolverGPU::solve()
         }
         particles[p].vel += timestep*accForces;
         particles[p].tempPos        = particles[p].pos + timestep*particles[p].vel;
-    }
+    }*/
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
     computeProgram->uploadUnsignedInt("taskId",0);
-
-    //Neighbor search
-    #pragma omp parallel for
-    for(unsigned int p=0;p<particles.size();p++)
-    {
-        std::list<unsigned int> candidates = spatialHashMap->find(Particle(particles[p].tempPos));
-        for(std::list<unsigned int>::iterator it=candidates.begin();it!=candidates.end();it++)
-        {
-            if(particles[p].index!=*it)
-            {
-                Particle part = particles[*it];
-                if(glm::length(particles[p].pos-part.pos)<=kernelSupport)
-                {
-                    neighbors[p].push_back(part);
-                }
-            }
-        }
-        neighbors[p];
-    }
-
-    //Solver iteration loop
-    for(unsigned int i=0;i<iterations;i++)
-    {
-        //Calculate Correction
-        #pragma omp parallel for
-        for(unsigned int p=0;p<particles.size();p++)
-        {
-            for(std::vector<AbstractConstraint*>::iterator cit=constraints.begin();cit!=constraints.end();cit++)
-            {
-                particles[p].density = (*cit)->execute(Particle(particles[p].tempPos),neighbors[p]);
-                particles[p].lambda = -particles[p].density/((*cit)->gradientSum(Particle(particles[p].tempPos),neighbors[p])+cfmRegularization);
-            }
-        }
-
-        //Update Particle Position
-        float invRestDensity = (1.0f/restDensity);
-        #pragma omp parallel for
-        for(unsigned int p=0;p<particles.size();p++)
-        {
-            displacement[p] = glm::vec3(0.0,0.0,0.0);
-            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
-            {
-                float sCorr = -corrConst*std::pow((densityKernel->execute(particles[p].tempPos-n->pos)/densityKernel->execute(glm::vec3(kernelSupport,0.0,0.0)*corrDist)),corrExp);
-
-                displacement[p] += (particles[p].lambda+n->lambda+sCorr)*gradKernel->grad(particles[p].tempPos-n->pos);
-            }
-            displacement[p] = invRestDensity*displacement[p];
-
-            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
-            {
-                if(glm::length((particles[p].tempPos+displacement[p])-n->pos)-2*0.05<0.0)
-                {
-                    displacement[p] += glm::length((particles[p].tempPos+displacement[p])-n->pos)*glm::normalize((particles[p].tempPos+displacement[p])-n->pos);
-                }
-            }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+1.5f<0)
-            {
-                displacement[p]+=-2.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+1.5f)*glm::vec3(0.0,1.0,0.0);
-            }
-            /*if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0))+1.5f<0)
-            {
-                //std::cout<<((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+1.0f)<<std::endl;
-                displacement[p]+=-2.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0)))+1.5f)*glm::vec3(0.0,-1.0,0.0);
-                //displacement[p]-=particles[p].tempPos;
-            }*/
-
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.5f<0)
-            {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.5f)*glm::vec3(-1.0,0.0,0.0);
-            }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.5f<0)
-            {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.5f)*glm::vec3(+1.0,0.0,0.0);
-            }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.5f<0)
-            {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.5f)*glm::vec3(0.0,0.0,-1.0);
-            }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.5f<0)
-            {
-                displacement[p]=-2.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.5f)*glm::vec3(0.0,0.0,+1.0);
-            }
-        }
-
-        //Update Temporary Particle Positions
-        #pragma omp parallel for
-        for(unsigned int p=0;p<particles.size();p++)
-        {
-            particles[p].tempPos += displacement[p];
-        }
-    }
-
-    //Update particle velocities and positions
-    float invTimestep = (1.0f/timestep);
-    #pragma omp parallel for
-    for(unsigned int p=0;p<particles.size();p++)
-    {
-        particles[p].vel = invTimestep*(particles[p].tempPos-particles[p].pos);
-    }
-    #pragma omp parallel for
-    for(unsigned int p=0;p<particles.size();p++)
-    {
-        //XSPH Artificial Viscosity
-        //Calculate curl
-        particles[p].curl = glm::vec3(0.0,0.0,0.0);
-        glm::vec3 velAccum(0.0f,0.0f,0.0f);
-        for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
-        {
-            particles[p].curl += glm::cross(n->vel-particles[p].vel,viscKernel->grad(particles[p].tempPos-n->pos));
-            velAccum += (n->vel-particles[p].vel)*viscKernel->execute(particles[p].tempPos-n->pos);
-        }
-        if(glm::length(particles[p].curl)>0.0001f)
-        {
-            particles[p].vel += timestep*artVort*glm::cross(glm::normalize(particles[p].curl),particles[p].curl);
-        }
-        particles[p].vel += timestep*artVisc*velAccum;
-        particles[p].pos  = particles[p].tempPos;
-    }
-    spatialHashMap->clear();
+    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->uploadUnsignedInt("taskId",1);
+    computeProgram->dispatch(particles.size(),1,1);
+    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 }
 
 void PBFSolverGPU::setDensityKernel(int id)
@@ -310,6 +197,16 @@ void PBFSolverGPU::setCorrExp(float corrExp)
 float PBFSolverGPU::getCorrExp()
 {
     return corrExp;
+}
+
+void PBFSolverGPU::setPartSize(float size)
+{
+    this->particleSize=size;
+}
+
+float PBFSolverGPU::getPartSize()
+{
+    return particleSize;
 }
 
 
