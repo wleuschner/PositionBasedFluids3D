@@ -73,6 +73,7 @@ std::list<unsigned int> RadixSort::find(const Particle &p)
     int yPos = glm::clamp((int)(std::floor((min.y+p.pos.y)/cellSize)),0,dimSize.y-1);
     int zPos = glm::clamp((int)(std::floor((min.z+p.pos.z)/cellSize)),0,dimSize.z-1);
 
+    unsigned int nBucket = histogram.size();
 
     //Bottom
     if(yPos>0)
@@ -92,8 +93,16 @@ std::list<unsigned int> RadixSort::find(const Particle &p)
             unsigned int bottomRightFront  = std::min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos-1+dimSize.y*(zPos+1)));
 
             unsigned int beginIdx = histogram[bottomLeftFront];
-            unsigned int endIdx = histogram[bottomRightFront+1];
-            result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+endIdx);
+            if(bottomRightFront==nBucket-1)
+            {
+                result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+particles.size());
+            }
+            else
+            {
+                unsigned int endIdx = histogram[bottomRightFront+1];
+                result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+endIdx);
+            }
+
         }
         unsigned int bottomLeftCenter = std::max(xPos-1,0)+(dimSize.x*(yPos-1+dimSize.y*zPos));
         unsigned int bottomRightCenter = std::min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos-1+dimSize.y*zPos));
@@ -122,14 +131,29 @@ std::list<unsigned int> RadixSort::find(const Particle &p)
 
             unsigned int beginIdx = histogram[topLeftFront];
             unsigned int endIdx = histogram[topRightFront+1];
-            result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+endIdx);
+            if(topRightFront==nBucket-1)
+            {
+                result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+particles.size());
+            }
+            else
+            {
+                unsigned int endIdx = histogram[topRightFront+1];
+                result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+endIdx);
+            }
         }
         unsigned int topLeftCenter = std::max(xPos-1,0)+(dimSize.x*(yPos+1+dimSize.y*zPos));
         unsigned int topRightCenter = std::min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos+1+dimSize.y*zPos));
 
         unsigned int beginIdx = histogram[topLeftCenter];
-        unsigned int endIdx = histogram[topRightCenter+1];
-        result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+endIdx);
+        if(topRightCenter==nBucket-1)
+        {
+            result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+particles.size());
+        }
+        else
+        {
+            unsigned int endIdx = histogram[topRightCenter+1];
+            result.insert(result.end(),sortedIndices.begin()+beginIdx,sortedIndices.begin()+endIdx);
+        }
 
 
     }
