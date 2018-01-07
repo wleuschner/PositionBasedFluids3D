@@ -128,14 +128,14 @@ void PBFSolver::solve()
             }
 
 
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+1.5f<0)
             {
                 //std::cout<<glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<<std::endl;
                 //displacement[p] = -1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0)))+0.5f)*glm::vec3(0.0,1.0,0.0);
 
                 glm::vec3 n1 = glm::vec3(0.0,1.0,0.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(0.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
 

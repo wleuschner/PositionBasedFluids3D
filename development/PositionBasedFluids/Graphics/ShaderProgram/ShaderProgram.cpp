@@ -92,6 +92,24 @@ void ShaderProgram::uploadVec4(const std::string& var,glm::vec4 val)
     glUniform4fv(loc,1,glm::value_ptr(val));
 }
 
+void ShaderProgram::uploadIVec2(const std::string& var,glm::ivec2 val)
+{
+    unsigned int loc = glGetUniformLocation(id,var.c_str());
+    glUniform2iv(loc,1,glm::value_ptr(val));
+}
+
+void ShaderProgram::uploadIVec3(const std::string& var,glm::ivec3 val)
+{
+    unsigned int loc = glGetUniformLocation(id,var.c_str());
+    glUniform3iv(loc,1,glm::value_ptr(val));
+}
+
+void ShaderProgram::uploadIvec4(const std::string& var,glm::ivec4 val)
+{
+    unsigned int loc = glGetUniformLocation(id,var.c_str());
+    glUniform4iv(loc,1,glm::value_ptr(val));
+}
+
 void ShaderProgram::uploadMat2(const std::string& var,glm::mat2 val)
 {
     unsigned int loc = glGetUniformLocation(id,var.c_str());

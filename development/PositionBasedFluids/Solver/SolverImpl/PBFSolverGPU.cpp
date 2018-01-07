@@ -1,5 +1,7 @@
+#include<GL/glew.h>
 #include"PBFSolverGPU.h"
 #include"../Constraint/ConstraintImpl/DensityConstraint.h"
+#include"../../Graphics/AABB/AABB.h"
 #include<list>
 #include<iostream>
 #include<GL/glew.h>
@@ -43,6 +45,24 @@ void PBFSolverGPU::init()
 
 void PBFSolverGPU::solve()
 {
+    AABB aabb = AABB(glm::vec3(-1.0,-1.5,-1.0),glm::vec3(1.0,1.5,1.0));
+    glm::ivec3 dimSize;
+    const glm::vec3 ext = aabb.getExtent();
+    const glm::vec3 min = aabb.min;
+    dimSize.x = std::ceil(ext.x/kernelSupport);
+    dimSize.y = std::ceil(ext.y/kernelSupport);
+    dimSize.z = std::ceil(ext.z/kernelSupport);
+    unsigned int elems = dimSize.x*dimSize.y*dimSize.z;
+    std::cout<<dimSize.x<<" "<<dimSize.y<<" "<<dimSize.z<<std::endl;
+
+    //Setup Compute Shader
+    std::vector<unsigned int> bufData(elems);
+
+    unsigned int histBuf;
+    glGenBuffers(1,&histBuf);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,histBuf);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*elems,bufData.data(),GL_DYNAMIC_DRAW);
+
     computeProgram->bind();
     computeProgram->uploadScalar("timestep",timestep);
     computeProgram->uploadUnsignedInt("iterations",iterations);
@@ -54,33 +74,52 @@ void PBFSolverGPU::solve()
     computeProgram->uploadScalar("corrConst",corrConst);
     computeProgram->uploadScalar("corrDist",corrDist);
     computeProgram->uploadScalar("corrExp",corrExp);
+    computeProgram->uploadVec3("minOfs",min);
+    computeProgram->uploadIVec3("dimSize",dimSize);
+    computeProgram->uploadScalar("particleSize",particleSize);
 
-    std::vector<std::list<Particle>> neighbors(particles.size());
-    std::vector<glm::vec3> displacement(particles.size());
 
-    //Apply external forces
-    init();
-    /*#pragma omp parallel for
-    for(unsigned int p=0;p<particles.size();p++)
-    {
-        glm::vec3 accForces = glm::vec3(0.0,0.0,0.0);
-        for(std::vector<AbstractForce*>::iterator f = externalForces.begin();f!=externalForces.end();f++)
-        {
-            accForces += (*f)->execute(particles[p].pos);
-        }
-        particles[p].vel += timestep*accForces;
-        particles[p].tempPos        = particles[p].pos + timestep*particles[p].vel;
-    }*/
-    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+    GLsync syncObj;
+
     computeProgram->uploadUnsignedInt("taskId",0);
     computeProgram->dispatch(particles.size(),1,1);
-    computeProgram->uploadUnsignedInt("taskId",2);
-    computeProgram->dispatch(particles.size(),1,1);
-    computeProgram->uploadUnsignedInt("taskId",3);
-    computeProgram->dispatch(particles.size(),1,1);
+
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
     computeProgram->uploadUnsignedInt("taskId",1);
     computeProgram->dispatch(particles.size(),1,1);
-    glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,histBuf);
+    unsigned int* ptr = (unsigned int *) glMapBuffer( GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY );
+    for(unsigned int i=0;i<elems;i++)
+    {
+        std::cout<<ptr[i]<<" ";
+    }
+    glUnmapBuffer( GL_SHADER_STORAGE_BUFFER );
+    std::cout<<std::endl;
+
+    //Iterate
+    //glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+
+    for(unsigned i=0;i<iterations;i++)
+    {
+        computeProgram->uploadUnsignedInt("taskId",3);
+        computeProgram->dispatch(particles.size(),1,1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        computeProgram->uploadUnsignedInt("taskId",4);
+        computeProgram->dispatch(particles.size(),1,1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        computeProgram->uploadUnsignedInt("taskId",2);
+        computeProgram->dispatch(particles.size(),1,1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+
+    }
+    //glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
+    glDeleteBuffers(1,&histBuf);
+
 }
 
 void PBFSolverGPU::setDensityKernel(int id)

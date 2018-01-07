@@ -28,6 +28,9 @@ public:
     void uploadVec2(const std::string& var,glm::vec2 val);
     void uploadVec3(const std::string& var,glm::vec3 val);
     void uploadVec4(const std::string& var,glm::vec4 val);
+    void uploadIVec2(const std::string& var,glm::ivec2 val);
+    void uploadIVec3(const std::string& var,glm::ivec3 val);
+    void uploadIvec4(const std::string& var,glm::ivec4 val);
     void uploadMat2(const std::string& var,glm::mat2 val);
     void uploadMat3(const std::string& var,glm::mat3 val);
     void uploadMat4(const std::string& var,glm::mat4 val);
