@@ -45,13 +45,13 @@ void PBFSolverGPU::init()
 
 void PBFSolverGPU::solve()
 {
-    AABB aabb = AABB(glm::vec3(-1.0,-1.5,-1.0),glm::vec3(1.0,1.5,1.0));
+    AABB aabb = AABB(glm::vec3(-1.2,-1.7,-1.2),glm::vec3(1.2,1.7,1.2));
     glm::ivec3 dimSize;
     const glm::vec3 ext = aabb.getExtent();
-    const glm::vec3 min = aabb.min;
-    dimSize.x = std::ceil(ext.x/kernelSupport);
-    dimSize.y = std::ceil(ext.y/kernelSupport);
-    dimSize.z = std::ceil(ext.z/kernelSupport);
+    const glm::vec3 min = aabb.getCenter()-aabb.min;
+    dimSize.x = glm::max(std::ceil(ext.x/kernelSupport),1.0f);
+    dimSize.y = glm::max(std::ceil(ext.y/kernelSupport),1.0f);
+    dimSize.z = glm::max(std::ceil(ext.z/kernelSupport),1.0f);
     unsigned int elems = dimSize.x*dimSize.y*dimSize.z;
     std::cout<<dimSize.x<<" "<<dimSize.y<<" "<<dimSize.z<<std::endl;
 
@@ -59,8 +59,13 @@ void PBFSolverGPU::solve()
     std::vector<unsigned int> bufData(elems);
 
     unsigned int histBuf;
+    unsigned int ofsBuf;
     glGenBuffers(1,&histBuf);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,histBuf);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2,histBuf);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*elems,bufData.data(),GL_DYNAMIC_DRAW);
+
+    glGenBuffers(1,&ofsBuf);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,3,ofsBuf);
     glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*elems,bufData.data(),GL_DYNAMIC_DRAW);
 
     computeProgram->bind();
@@ -77,6 +82,8 @@ void PBFSolverGPU::solve()
     computeProgram->uploadVec3("minOfs",min);
     computeProgram->uploadIVec3("dimSize",dimSize);
     computeProgram->uploadScalar("particleSize",particleSize);
+    computeProgram->uploadUnsignedInt("nParticles",particles.size());
+    computeProgram->uploadUnsignedInt("nBuckets",elems);
 
 
 
@@ -91,7 +98,15 @@ void PBFSolverGPU::solve()
     computeProgram->dispatch(particles.size(),1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-    glBindBuffer(GL_SHADER_STORAGE_BUFFER,histBuf);
+    computeProgram->uploadUnsignedInt("taskId",2);
+    computeProgram->dispatch(1,1,1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    computeProgram->uploadUnsignedInt("taskId",3);
+    computeProgram->dispatch(1,1,1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,ofsBuf);
     unsigned int* ptr = (unsigned int *) glMapBuffer( GL_SHADER_STORAGE_BUFFER, GL_READ_ONLY );
     for(unsigned int i=0;i<elems;i++)
     {
@@ -105,13 +120,13 @@ void PBFSolverGPU::solve()
 
     for(unsigned i=0;i<iterations;i++)
     {
-        computeProgram->uploadUnsignedInt("taskId",3);
+        computeProgram->uploadUnsignedInt("taskId",5);
+        computeProgram->dispatch(particles.size(),1,1);
+        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        computeProgram->uploadUnsignedInt("taskId",6);
         computeProgram->dispatch(particles.size(),1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         computeProgram->uploadUnsignedInt("taskId",4);
-        computeProgram->dispatch(particles.size(),1,1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        computeProgram->uploadUnsignedInt("taskId",2);
         computeProgram->dispatch(particles.size(),1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -119,6 +134,7 @@ void PBFSolverGPU::solve()
     }
     //glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
     glDeleteBuffers(1,&histBuf);
+    glDeleteBuffers(1,&ofsBuf);
 
 }
 

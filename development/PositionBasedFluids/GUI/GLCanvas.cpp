@@ -40,6 +40,8 @@ void GLCanvas::simulate()
         {
             particles->upload();
         }
+        particles->swapBuffers();
+
         if(record)
         {
             QImage screenshot = grabFramebuffer();
@@ -138,21 +140,12 @@ void GLCanvas::initializeGL()
             }
         }
     }
+    particles->init();
     pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
     pbfGpu = new PBFSolverGPU(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
     //particles->addParticle(Particle(0,glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
-    particles->upload();
 
-    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
-    glEnableVertexAttribArray(3);
-
-    glVertexAttribDivisor(0,0);
-    glVertexAttribDivisor(1,0);
-    glVertexAttribDivisor(2,1);
-    glVertexAttribDivisor(3,1);
 }
 
 void GLCanvas::paintGL()
