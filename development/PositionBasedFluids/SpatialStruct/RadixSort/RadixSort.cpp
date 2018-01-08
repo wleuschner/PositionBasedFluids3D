@@ -26,7 +26,7 @@ void RadixSort::update()
         sortedIndices.resize(particles.size());
     }
     std::vector<std::atomic<unsigned int>> buckets(elems);
-    std::vector<unsigned int> ofs(elems);
+    std::vector<std::atomic<unsigned int>> ofs(elems);
 
 
     //Compute Bucket for Particle and count
@@ -54,11 +54,11 @@ void RadixSort::update()
         acc+=buckets[i];
     }
     //ReInsert Particles
+    #pragma omp parallel for
     for(unsigned int i=0;i<particles.size();i++)
     {
         unsigned int bucket = particles[i].bucket;
-        sortedIndices[histogram[bucket]+ofs[bucket]] = particles[i].index;
-        ofs[bucket]++;
+        sortedIndices[histogram[bucket]+ofs[bucket].fetch_add(1)] = particles[i].index;
     }
 
 }

@@ -41,7 +41,6 @@ void GLCanvas::simulate()
         {
             particles->upload();
         }
-        particles->swapBuffers();
 
         if(record)
         {
@@ -141,16 +140,26 @@ void GLCanvas::initializeGL()
             }
         }
     }
-    particles->init();
+    particles->upload();
     pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
     pbfGpu = new PBFSolverGPU(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
     //particles->addParticle(Particle(0,glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
-
 }
 
 void GLCanvas::paintGL()
 {
+    Vertex::enableVertexAttribs();
+    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
+    glEnableVertexAttribArray(3);
+
+    glVertexAttribDivisor(0,0);
+    glVertexAttribDivisor(1,0);
+    glVertexAttribDivisor(2,1);
+    glVertexAttribDivisor(3,1);
+
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     program->bind();
     view = camera.getView();
@@ -271,6 +280,7 @@ void GLCanvas::keyPressEvent(QKeyEvent *event)
     case Qt::Key_Plus:
         std::cout<<"STEP"<<std::endl;
         step = true;
+        updateTimer.stop();
         simulate();
         break;
     }
