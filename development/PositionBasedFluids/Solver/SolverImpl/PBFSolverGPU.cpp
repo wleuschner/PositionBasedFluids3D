@@ -48,6 +48,12 @@ void PBFSolverGPU::solve()
 
     unsigned int histBuf;
     unsigned int ofsBuf;
+    unsigned int backBuf;
+
+    glGenBuffers(1,&backBuf);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,backBuf);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(Particle)*particles.size(),NULL,GL_DYNAMIC_DRAW);
+
     glGenBuffers(1,&histBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2,histBuf);
     glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*elems,bufData.data(),GL_DYNAMIC_DRAW);
@@ -83,12 +89,14 @@ void PBFSolverGPU::solve()
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
 
     computeProgram->uploadUnsignedInt("taskId",1);
     computeProgram->dispatch(particles.size(),1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
 
 
     computeProgram->uploadUnsignedInt("taskId",2);
@@ -96,13 +104,15 @@ void PBFSolverGPU::solve()
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
 
 
     computeProgram->uploadUnsignedInt("taskId",3);
-    computeProgram->dispatch(1,1,1);
+    computeProgram->dispatch(particles.size(),1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
 
 
     //Iterate
@@ -115,39 +125,52 @@ void PBFSolverGPU::solve()
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
+        glDeleteSync(syncObj);
+
         computeProgram->uploadUnsignedInt("taskId",5);
         computeProgram->dispatch(particles.size(),1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
+        glDeleteSync(syncObj);
+
         computeProgram->uploadUnsignedInt("taskId",6);
         computeProgram->dispatch(particles.size(),1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
+        glDeleteSync(syncObj);
+
         computeProgram->uploadUnsignedInt("taskId",7);
         computeProgram->dispatch(particles.size(),1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+        syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);        
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
-        computeProgram->uploadUnsignedInt("taskId",8);
-        computeProgram->dispatch(particles.size(),1,1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
-        glClientWaitSync(syncObj,0,1000*1000*1000*2);
+        glDeleteSync(syncObj);
+
         computeProgram->uploadUnsignedInt("taskId",9);
         computeProgram->dispatch(particles.size(),1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
+        glDeleteSync(syncObj);
 
 
     }
+    computeProgram->uploadUnsignedInt("taskId",8);
+    computeProgram->dispatch(particles.size(),1,1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+    glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
     //glMemoryBarrier( GL_SHADER_IMAGE_ACCESS_BARRIER_BIT );
 
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,0);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2,0);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,3,0);
 
+
+    glDeleteBuffers(1,&backBuf);
     glDeleteBuffers(1,&histBuf);
     glDeleteBuffers(1,&ofsBuf);
 
@@ -194,7 +217,6 @@ void PBFSolverGPU::setKernelSupport(float support)
     gradKernel->setRadius(support);
     viscKernel->setRadius(support);
     this->kernelSupport = support;
-    this->spatialHashMap->setNewCellSize(support);
 }
 
 float PBFSolverGPU::getKernelSupport()

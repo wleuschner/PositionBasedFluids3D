@@ -104,25 +104,20 @@ void main()
     //Update Lambda
     case 4:
         neighborInteraction(gId);
-        memoryBarrier();
         break;
     case 5:
         particles[gId].displacement = vec3(0.0,0.0,0.0);
         neighborInteraction(gId);
-        memoryBarrier();
         break;
     case 6:
         neighborInteraction(gId);
         updateDisplacement(gId);
-        memoryBarrier();
         break;
     case 7:
         updateTempPos(gId);
-        memoryBarrier();
         break;
     case 8:
         updatePositions(gId);
-        memoryBarrier();
         break;
     case 9:
         break;
@@ -143,9 +138,10 @@ void applyExternalForces(uint gId)
 
 void insertCountBuckets(uint gId)
 {
-    float xPosF = (minOfs.x+particlesFront[gId].pos.x)/kernelSupport;
-    float yPosF = (minOfs.y+particlesFront[gId].pos.y)/kernelSupport;
-    float zPosF = (minOfs.z+particlesFront[gId].pos.z)/kernelSupport;
+    Particle p = particlesFront[gId];
+    float xPosF = (minOfs.x+p.pos.x)/kernelSupport;
+    float yPosF = (minOfs.y+p.pos.y)/kernelSupport;
+    float zPosF = (minOfs.z+p.pos.z)/kernelSupport;
 
     int xPos = clamp(int(floor(xPosF)),0,dimSize.x-1);
     int yPos = clamp(int(floor(yPosF)),0,dimSize.y-1);
@@ -169,70 +165,69 @@ void computeHistogram(uint gId)
 
 void reoderParticles(uint gId)
 {
-    for(uint i=0;i<nParticles;i++)
-    {
-        Particle part = particlesFront[i];
-        uint b = part.bucket;
-        particles[histogram[b]+ofs[b]] = part;
-        ofs[b]++;
-    }
+    Particle part = particlesFront[gId];
+    uint b = part.bucket;
+    particles[histogram[b]+atomicAdd(ofs[b],1)] = part;
 }
 
 void updateDisplacement(uint gId)
 {
-    if(dot((particles[gId].tempPos+particles[gId].displacement),vec3(0.0,1.0,0.0))+1.5f<0.0)
+    Particle p = particles[gId];
+    if(dot((p.tempPos+p.displacement),vec3(0.0,1.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,1.0,0.0);
-        vec3 r = normalize((particles[gId].tempPos)-particles[gId].pos);
-        float t = -(1.5+dot(n1,particles[gId].pos))/dot(n1,r);
-        particles[gId].displacement = particles[gId].pos+(r*t)-particles[gId].tempPos;
+        vec3 r = normalize((p.tempPos)-p.pos);
+        float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
+        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((particles[gId].tempPos+particles[gId].displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,-1.0,0.0);
-        vec3 r = normalize((particles[gId].tempPos)-particles[gId].pos);
-        float t = -(1.5+dot(n1,particles[gId].pos))/dot(n1,r);
-        particles[gId].displacement = particles[gId].pos+(r*t)-particles[gId].tempPos;
+        vec3 r = normalize((p.tempPos)-p.pos);
+        float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
+        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((particles[gId].tempPos+particles[gId].displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(-1.0,0.0,0.0);
-        vec3 r = normalize((particles[gId].tempPos)-particles[gId].pos);
-        float t = -(1.0+dot(n1,particles[gId].pos))/dot(n1,r);
-        particles[gId].displacement = particles[gId].pos+(r*t)-particles[gId].tempPos;
+        vec3 r = normalize((p.tempPos)-p.pos);
+        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((particles[gId].tempPos+particles[gId].displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(1.0,0.0,0.0);
-        vec3 r = normalize((particles[gId].tempPos)-particles[gId].pos);
-        float t = -(1.0+dot(n1,particles[gId].pos))/dot(n1,r);
-        particles[gId].displacement = particles[gId].pos+(r*t)-particles[gId].tempPos;
+        vec3 r = normalize((p.tempPos)-p.pos);
+        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((particles[gId].tempPos+particles[gId].displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,-1.0);
-        vec3 r = normalize((particles[gId].tempPos)-particles[gId].pos);
-        float t = -(1.0+dot(n1,particles[gId].pos))/dot(n1,r);
-        particles[gId].displacement = particles[gId].pos+(r*t)-particles[gId].tempPos;
+        vec3 r = normalize((p.tempPos)-p.pos);
+        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((particles[gId].tempPos+particles[gId].displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
-        vec3 r = normalize((particles[gId].tempPos)-particles[gId].pos);
-        float t = -(1.0+dot(n1,particles[gId].pos))/dot(n1,r);
-        particles[gId].displacement = particles[gId].pos+(r*t)-particles[gId].tempPos;
+        vec3 r = normalize((p.tempPos)-p.pos);
+        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
     }
 }
 
 void updateTempPos(uint gId)
 {
-    particles[gId].tempPos = particles[gId].tempPos + particles[gId].displacement;
+    Particle p = particles[gId];
+    particles[gId].tempPos = p.tempPos + p.displacement;
 }
 
 void updatePositions(uint gId)
 {
-    particles[gId].vel = (1.0/timestep)*(particles[gId].tempPos-particles[gId].pos);
-    particles[gId].pos = particles[gId].tempPos;
+    Particle p = particles[gId];
+    particlesFront[gId].vel = (1.0/timestep)*(p.tempPos-p.pos);
+    particlesFront[gId].pos = p.tempPos;
 }
 
 void neighborInteraction(uint gId)
@@ -245,101 +240,91 @@ void neighborInteraction(uint gId)
     uint beginIdx[9];
     uint endIdx[9];
 
+    uint xPosBegin,xPosEnd;
+    uint yPosBegin,yPosEnd;
+    uint zPosBegin,zPosEnd;
+
+    xPosBegin = max(xPos-1,0);
+    xPosEnd   = min(xPos+1,dimSize.x-1);
+
+    yPosBegin = max(yPos-1,0);
+    yPosEnd   = min(yPos+1,dimSize.y-1);
+
+    zPosBegin = max(zPos-1,0);
+    zPosEnd   = min(zPos+1,dimSize.z-1);
+
     //Bottom
-    if(yPos>0)
+    uint bottomLeftBack   = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPosBegin));
+    uint bottomRightBack   = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPosBegin));
+
+    beginIdx[0] = histogram[bottomLeftBack];
+    endIdx[0] = histogram[bottomRightBack+1];
+
+    uint bottomLeftFront  = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
+    uint bottomRightFront  = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
+
+    beginIdx[1] = histogram[bottomLeftFront];
+    if(bottomRightFront==nBuckets-1)
     {
-        if(zPos>0)
-        {
-            uint bottomLeftBack   = max(xPos-1,0)+(dimSize.x*(yPos-1+dimSize.y*(zPos-1)));
-            uint bottomRightBack   = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos-1+dimSize.y*(zPos-1)));
-
-            beginIdx[0] = histogram[bottomLeftBack];
-            endIdx[0] = histogram[bottomRightBack+1];
-        }
-        if(zPos<dimSize.z-1)
-        {
-            uint bottomLeftFront  = max(xPos-1,0)+(dimSize.x*(yPos-1+dimSize.y*(zPos+1)));
-            uint bottomRightFront  = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos-1+dimSize.y*(zPos+1)));
-
-            beginIdx[1] = histogram[bottomLeftFront];
-            if(bottomRightFront==nBuckets-1)
-            {
-                endIdx[1] = nParticles;
-            }
-            else
-            {
-                endIdx[1] = histogram[bottomRightFront+1];
-            }
-
-        }
-        uint bottomLeftCenter = max(xPos-1,0)+(dimSize.x*(yPos-1+dimSize.y*zPos));
-        uint bottomRightCenter = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos-1+dimSize.y*zPos));
-
-        beginIdx[2] = histogram[bottomLeftCenter];
-        endIdx[2] = histogram[bottomRightCenter+1];
+        endIdx[1] = nParticles;
     }
+    else
+    {
+        endIdx[1] = histogram[bottomRightFront+1];
+    }
+    uint bottomLeftCenter = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPos));
+    uint bottomRightCenter = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPos));
+
+    beginIdx[2] = histogram[bottomLeftCenter];
+    endIdx[2] = histogram[bottomRightCenter+1];
 
     //Top
-    if(yPos<dimSize.y-1)
+    uint topLeftBack = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
+    uint topRightBack = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
+
+    beginIdx[3] = histogram[topLeftBack];
+    endIdx[3] = histogram[topRightBack+1];
+
+    uint topLeftFront = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
+    uint topRightFront = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
+
+    beginIdx[4] = histogram[topLeftFront];
+    if(topRightFront==nBuckets-1)
     {
-        if(zPos>0)
-        {
-            uint topLeftBack = max(xPos-1,0)+(dimSize.x*(yPos+1+dimSize.y*(zPos-1)));
-            uint topRightBack = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos+1+dimSize.y*(zPos-1)));
+        endIdx[4] = nParticles;
+    }
+    else
+    {
+        endIdx[4] = histogram[topRightFront+1];
+    }
+    uint topLeftCenter = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPos));
+    uint topRightCenter = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPos));
 
-            beginIdx[3] = histogram[topLeftBack];
-            endIdx[3] = histogram[topRightBack+1];
-        }
-        if(zPos<dimSize.z-1)
-        {
-            uint topLeftFront = max(xPos-1,0)+(dimSize.x*(yPos+1+dimSize.y*(zPos+1)));
-            uint topRightFront = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos+1+dimSize.y*(zPos+1)));
-
-            beginIdx[4] = histogram[topLeftFront];
-            if(topRightFront==nBuckets-1)
-            {
-                endIdx[4] = nParticles;
-            }
-            else
-            {
-                endIdx[4] = histogram[topRightFront+1];
-            }
-        }
-        uint topLeftCenter = max(xPos-1,0)+(dimSize.x*(yPos+1+dimSize.y*zPos));
-        uint topRightCenter = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos+1+dimSize.y*zPos));
-
-        beginIdx[5] = histogram[topLeftCenter];
-        if(topRightCenter==nBuckets-1)
-        {
-            endIdx[5] = nParticles;
-        }
-        else
-        {
-            endIdx[5] = histogram[topRightCenter+1];
-        }
-
-
+    beginIdx[5] = histogram[topLeftCenter];
+    if(topRightCenter==nBuckets-1)
+    {
+        endIdx[5] = nParticles;
+    }
+    else
+    {
+        endIdx[5] = histogram[topRightCenter+1];
     }
 
     //Center
-    if(zPos>0)
-    {
-        uint centerLeftBack = max(xPos-1,0)+(dimSize.x*(yPos+dimSize.y*(zPos-1)));
-        uint centerRightBack = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos+dimSize.y*(zPos-1)));
+    uint centerLeftBack = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosBegin));
+    uint centerRightBack = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosEnd));
 
-        beginIdx[6] = histogram[centerLeftBack];
-        endIdx[6] = histogram[centerRightBack+1];
-    }
-    if(zPos<dimSize.z-1)
-    {
-        uint centerLeftFront = max(xPos-1,0)+(dimSize.x*(yPos+dimSize.y*(zPos+1)));
-        uint centerRightFront = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos+dimSize.y*(zPos+1)));
+    beginIdx[6] = histogram[centerLeftBack];
+    endIdx[6] = histogram[centerRightBack+1];
 
-        beginIdx[7] = histogram[centerLeftFront];
-        endIdx[7] = histogram[centerRightFront+1];
-    }
-    uint centerLeftCenter = max(xPos-1,0)+(dimSize.x*(yPos+dimSize.y*zPos));
-    uint centerRightCenter = min(xPos+1,dimSize.x-1)+(dimSize.x*(yPos+dimSize.y*zPos));
+    uint centerLeftFront = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosEnd));
+    uint centerRightFront = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosEnd));
+
+    beginIdx[7] = histogram[centerLeftFront];
+    endIdx[7] = histogram[centerRightFront+1];
+
+    uint centerLeftCenter = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPos));
+    uint centerRightCenter = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPos));
     beginIdx[8] = histogram[centerLeftCenter];
     endIdx[8] = histogram[centerRightCenter+1];
 
@@ -354,7 +339,7 @@ void neighborInteraction(uint gId)
         for(uint j=beginIdx[i];j<endIdx[i];j++)
         {
             Particle n = particles[j];
-            if(particles[gId].index!=n.index)
+            if(p.index!=n.index)
             {
                 if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
                 {
@@ -401,11 +386,12 @@ void neighborInteraction(uint gId)
 
 float checkParticleCollision(uint gId,Particle n,float minDist)
 {
+    Particle p = particles[gId];
     float ret = minDist;
-    vec3 dVec = n.pos-(particles[gId].tempPos+particles[gId].displacement);
+    vec3 dVec = n.pos-(p.tempPos+p.displacement);
     float rSumSquared = 4*particleSize*particleSize;
     vec3 c = n.pos-particles[gId].pos;
-    vec3 v = (particles[gId].tempPos+particles[gId].displacement)-particles[gId].pos;
+    vec3 v = (p.tempPos+p.displacement)-p.pos;
     vec3 n1 = normalize(v);
     float d = dot(n1,c);
     float d1 = d*d-(dot((c),(c)))+particleSize*particleSize;
@@ -417,7 +403,7 @@ float checkParticleCollision(uint gId,Particle n,float minDist)
         if(d<minDist)
         {
             float corr = (d-t);
-            vec3 tempDispl = particles[gId].pos+(t*v)-particles[gId].tempPos;
+            vec3 tempDispl = p.pos+(t*v)-p.tempPos;
             particles[gId].displacement = tempDispl;
             minDist=d;
         }
