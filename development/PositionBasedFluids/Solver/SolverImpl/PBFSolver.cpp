@@ -61,7 +61,7 @@ void PBFSolver::solve()
             if(particles[p].index!=*it)
             {
                 Particle part = particles[*it];
-                if(glm::length(particles[p].tempPos-part.pos)<=kernelSupport)
+                if(glm::dot(particles[p].tempPos-part.pos,particles[p].tempPos-part.pos)<=kernelSupport*kernelSupport)
                 {
                     neighbors[p].push_back(part);
                 }

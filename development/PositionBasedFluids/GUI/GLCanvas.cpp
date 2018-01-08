@@ -16,6 +16,7 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     particleSize = 0.005;
     screenshotNo = 0;
     running = false;
+    step = false;
     record = false;
     gpu = false;
     format = QSurfaceFormat::defaultFormat();
@@ -32,7 +33,7 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 void GLCanvas::simulate()
 {
     updateTimer.stop();
-    if(running)
+    if(running||step)
     {
         solver->solve();
         particles->bind();
@@ -48,7 +49,7 @@ void GLCanvas::simulate()
             screenshot.save(QString("Screenshot")+QString::number(screenshotNo)+QString(".png"),"png");
             screenshotNo++;
         }
-
+        step = false;
     }
     update();
     updateTimer.start();
@@ -266,6 +267,11 @@ void GLCanvas::keyPressEvent(QKeyEvent *event)
             running = false;
         }
         //simulate();
+        break;
+    case Qt::Key_Plus:
+        std::cout<<"STEP"<<std::endl;
+        step = true;
+        simulate();
         break;
     }
 }

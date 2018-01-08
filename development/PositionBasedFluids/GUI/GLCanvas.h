@@ -48,6 +48,7 @@ protected slots:
     void simulate();
 private:
     unsigned int screenshotNo;
+    bool step;
     bool running;
     bool record;
     bool gpu;
