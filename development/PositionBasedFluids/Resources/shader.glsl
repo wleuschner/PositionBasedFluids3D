@@ -57,14 +57,8 @@ layout (std430,binding=3) buffer ofsBuffer
 
 layout( local_size_x = 1, local_size_y = 1, local_size_z = 1 ) in;
 
-void applyExternalForces(uint gId);
-void insertCountBuckets(uint gId);
-void computeHistogram(uint gId);
-void reoderParticles(uint gId);
-void updateDisplacement(uint gId);
-void updateTempPos(uint gId);
-void updatePositions(uint gId);
 
+void updateDisplacement(uint gId);
 void neighborInteraction(uint gId);
 float checkParticleCollision(uint gId,Particle n,float minDist);
 
@@ -85,6 +79,7 @@ void main()
 {
     uint gId = gl_GlobalInvocationID.x;
     Particle p = particles[gId];
+    Particle pf = particlesFront[gId];
 
     float minDist = 100000.0f;
     float density = 0.0;
@@ -98,20 +93,46 @@ void main()
     {
     //Apply external forces
     case 0:
-        applyExternalForces(gId);
-        break;
+        {
+            particlesFront[gId].vel += vec3(0.0,-9.81,0.0);
+            particlesFront[gId].tempPos = particlesFront[gId].pos + timestep*particlesFront[gId].vel;
+            break;
+        }
     //Insert and Count Buckets
     case 1:
-        insertCountBuckets(gId);
-        break;
+        {
+            float xPosF = (minOfs.x+pf.pos.x)/kernelSupport;
+            float yPosF = (minOfs.y+pf.pos.y)/kernelSupport;
+            float zPosF = (minOfs.z+pf.pos.z)/kernelSupport;
+
+            int xPos = clamp(int(floor(xPosF)),0,dimSize.x-1);
+            int yPos = clamp(int(floor(yPosF)),0,dimSize.y-1);
+            int zPos = clamp(int(floor(zPosF)),0,dimSize.z-1);
+
+            uint b = xPos+(dimSize.y*(yPos+dimSize.x*zPos));
+            particlesFront[gId].bucket = b;
+            atomicAdd(histogram[b],1);
+            break;
+        }
     //Compute Histogram
     case 2:
-        computeHistogram(gId);
-        break;
+        {
+            uint acc=0;
+            for(uint i=0;i<=nBuckets;i++)
+            {
+                uint tVal = histogram[i];
+                histogram[i] = acc;
+                acc+=tVal;
+            }
+            break;
+        }
     //Reoder Particles
     case 3:
-        reoderParticles(gId);
-        break;
+        {
+            uint b = pf.bucket;
+            particles[histogram[b]+atomicAdd(ofs[b],1)] = pf;
+            break;
+        }
     //Update Lambda
     case 4:
         neighborInteraction(gId);
@@ -140,7 +161,7 @@ void main()
         particles[gId].lambda = -density/(gradSum+cfmRegularization);
         break;
     case 5:
-        particles[gId].displacement = vec3(0.0,0.0,0.0);
+        vec3 displacement = vec3(0.0,0.0,0.0);
         neighborInteraction(gId);
         for(uint i=0;i<9;i++)
         {
@@ -152,12 +173,12 @@ void main()
                     if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
                     {
                         float sCorr = -corrConst*pow(kernelPoly6(p.tempPos-n.pos)/kernelPoly6(vec3(kernelSupport,0.0,0.0)*corrDist),corrExp);
-                        particles[gId].displacement += (p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos);
+                        displacement += (p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos);
                     }
                 }
             }
         }
-        particles[gId].displacement = invRestDensity*particles[gId].displacement;
+        particles[gId].displacement = invRestDensity*displacement;
         break;
     case 6:
         neighborInteraction(gId);
@@ -178,14 +199,12 @@ void main()
         updateDisplacement(gId);
         break;
     case 7:
-        updateTempPos(gId);
+        particles[gId].tempPos += p.displacement;
         break;
     case 8:
-        //particlesFront[gId] = particles[gId];
         p.vel = (1.0/timestep)*(p.tempPos-p.pos);
-        particles[gId] = p;
+        //particles[gId] = p;
         particlesFront[gId] = p;
-        memoryBarrier();
         break;
     case 9:
         neighborInteraction(gId);
@@ -193,78 +212,21 @@ void main()
         {
             for(uint j=beginIdx[i];j<endIdx[i];j++)
             {
-                Particle n = particles[j];
-                if(p.index!=n.index)
+                Particle n = particlesFront[j];
+                if(pf.index!=n.index)
                 {
-                    if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
+                    if(dot(pf.tempPos-n.pos,pf.tempPos-n.pos)<=kernelSupport*kernelSupport)
                     {
-                        curl += cross(n.vel-particlesFront[gId].vel,gradViscocity(p.tempPos-n.pos));
-                        velAccum += (n.vel-particlesFront[gId].vel)*kernelViscocity(p.tempPos-n.pos);
+                        curl += cross(n.vel-pf.vel,gradViscocity(p.tempPos-n.pos));
+                        velAccum += (n.vel-pf.vel)*kernelViscocity(p.tempPos-n.pos);
                     }
                 }
             }
         }
         particlesFront[gId].vel += timestep*artVisc*velAccum;
-        particlesFront[gId].pos  = p.tempPos;
-        break;
-    case 10:
-        updatePositions(gId);
-        break;
-    //Velocity update
-    case 11:
-        break;
-    //Velocity correction
-    case 12:
+        particlesFront[gId].pos  = pf.tempPos;
         break;
     }
-}
-
-void applyExternalForces(uint gId)
-{
-    particlesFront[gId].vel += vec3(0.0,-9.81,0.0);
-    particlesFront[gId].tempPos = particlesFront[gId].pos + timestep*particlesFront[gId].vel;
-}
-
-void insertCountBuckets(uint gId)
-{
-    Particle p = particlesFront[gId];
-    float xPosF = (minOfs.x+p.pos.x)/kernelSupport;
-    float yPosF = (minOfs.y+p.pos.y)/kernelSupport;
-    float zPosF = (minOfs.z+p.pos.z)/kernelSupport;
-
-    int xPos = clamp(int(floor(xPosF)),0,dimSize.x-1);
-    int yPos = clamp(int(floor(yPosF)),0,dimSize.y-1);
-    int zPos = clamp(int(floor(zPosF)),0,dimSize.z-1);
-
-    int b = xPos+(dimSize.y*(yPos+dimSize.x*zPos));
-    particlesFront[gId].bucket = b;
-    atomicAdd(histogram[b],1);
-}
-
-void computeHistogram(uint gId)
-{
-    uint acc=0;
-    for(uint i=0;i<=nBuckets;i++)
-    {
-        uint tVal = histogram[i];
-        histogram[i] = acc;
-        acc+=tVal;
-    }
-}
-
-void reoderParticles(uint gId)
-{
-    /*
-    for(uint i=0;i<nParticles;i++)
-    {
-        Particle part = particlesFront[i];
-        uint b = part.bucket;
-        particles[histogram[b]+atomicAdd(ofs[b],1)] = part;
-    }*/
-
-    Particle part = particlesFront[gId];
-    uint b = part.bucket;
-    particles[histogram[b]+atomicAdd(ofs[b],1)] = part;
 }
 
 void updateDisplacement(uint gId)
@@ -315,19 +277,6 @@ void updateDisplacement(uint gId)
     particles[gId].displacement = p.displacement;
 }
 
-void updateTempPos(uint gId)
-{
-    Particle p = particles[gId];
-    particles[gId].tempPos += p.displacement;
-}
-
-void updatePositions(uint gId)
-{
-    Particle p = particlesFront[gId];
-    //particlesFront[gId].vel =
-    particlesFront[gId].pos = p.tempPos;
-}
-
 void neighborInteraction(uint gId)
 {
     Particle p = particles[gId];
@@ -359,14 +308,8 @@ void neighborInteraction(uint gId)
     uint bottomRightFront  = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
 
     beginIdx[1] = histogram[bottomLeftFront];
-    if(bottomRightFront==nBuckets-1)
-    {
-        endIdx[1] = nParticles;
-    }
-    else
-    {
-        endIdx[1] = histogram[bottomRightFront+1];
-    }
+    endIdx[1] = histogram[bottomRightFront+1];
+
     uint bottomLeftCenter = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPos));
     uint bottomRightCenter = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPos));
 

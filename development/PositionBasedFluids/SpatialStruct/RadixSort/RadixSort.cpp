@@ -151,7 +151,7 @@ std::list<unsigned int> RadixSort::find(const Particle &p)
     {
         if(beginIdx[i]!=endIdx[i])
         {
-            result.insert(result.begin(),sortedIndices.begin()+beginIdx[i],sortedIndices.begin()+endIdx[i]);
+            result.insert(result.begin(),sortedIndices.begin()+beginIdx[i],sortedIndices.begin()+(endIdx[i]-1));
         }
     }
 
