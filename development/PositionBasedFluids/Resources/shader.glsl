@@ -105,6 +105,7 @@ void main()
     //Update Lambda
     case 4:
         neighborInteraction(gId);
+        memoryBarrier();
         break;
     case 5:
         particles[gId].displacement = vec3(0.0,0.0,0.0);
@@ -122,7 +123,9 @@ void main()
         break;
     case 8:
         particlesFront[gId] = particles[gId];
-        particlesFront[gId].vel = (1.0/timestep)*(p.tempPos-p.pos);
+        p.vel = (1.0/timestep)*(p.tempPos-p.pos);
+        particles[gId] = p;
+        particlesFront[gId] = p;
         memoryBarrier();
         break;
     case 9:
@@ -199,7 +202,6 @@ void updateDisplacement(uint gId)
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
-        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
     {
@@ -207,7 +209,6 @@ void updateDisplacement(uint gId)
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
-        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
     {
@@ -215,7 +216,6 @@ void updateDisplacement(uint gId)
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
-        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
     {
@@ -223,7 +223,6 @@ void updateDisplacement(uint gId)
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
-        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
     {
@@ -231,7 +230,6 @@ void updateDisplacement(uint gId)
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
-        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
     {
@@ -239,8 +237,8 @@ void updateDisplacement(uint gId)
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
-        particles[gId].displacement = p.displacement;
     }
+    particles[gId].displacement = p.displacement;
 }
 
 void updateTempPos(uint gId)
@@ -259,16 +257,16 @@ void updatePositions(uint gId)
 void neighborInteraction(uint gId)
 {
     Particle p = particles[gId];
-    uint xPos = uint(clamp(int((floor((minOfs.x+p.tempPos.x)/kernelSupport))),0,dimSize.x-1));
-    uint yPos = uint(clamp(int((floor((minOfs.y+p.tempPos.y)/kernelSupport))),0,dimSize.y-1));
-    uint zPos = uint(clamp(int((floor((minOfs.z+p.tempPos.z)/kernelSupport))),0,dimSize.z-1));
+    int xPos = int(clamp(int((floor((minOfs.x+p.tempPos.x)/kernelSupport))),0,dimSize.x-1));
+    int yPos = int(clamp(int((floor((minOfs.y+p.tempPos.y)/kernelSupport))),0,dimSize.y-1));
+    int zPos = int(clamp(int((floor((minOfs.z+p.tempPos.z)/kernelSupport))),0,dimSize.z-1));
 
     uint beginIdx[9];
     uint endIdx[9];
 
-    uint xPosBegin,xPosEnd;
-    uint yPosBegin,yPosEnd;
-    uint zPosBegin,zPosEnd;
+    int xPosBegin,xPosEnd;
+    int yPosBegin,yPosEnd;
+    int zPosBegin,zPosEnd;
 
     xPosBegin = max(xPos-1,0);
     xPosEnd   = min(xPos+1,dimSize.x-1);
@@ -374,14 +372,14 @@ void neighborInteraction(uint gId)
                     switch(taskId)
                     {
                     case 4:
-                        density += kernelPoly6(p.pos-n.pos);
-                        vec3 grad = gradSpikey(p.pos-n.pos);
+                        density += kernelPoly6(p.tempPos-n.pos);
+                        vec3 grad = gradSpikey(p.tempPos-n.pos);
                         gradSum1 += grad;
-                        grad = invRestDensity*-gradSpikey(p.pos-n.pos);
+                        grad = invRestDensity*-gradSpikey(p.tempPos-n.pos);
                         gradSum2 += dot(grad,grad);
                         break;
                     case 5:
-                        float sCorr = -corrConst*pow(kernelPoly6(p.pos-n.pos)/kernelPoly6(vec3(kernelSupport,0.0,0.0)*corrDist),corrExp);
+                        float sCorr = -corrConst*pow(kernelPoly6(p.tempPos-n.pos)/kernelPoly6(vec3(kernelSupport,0.0,0.0)*corrDist),corrExp);
                         particles[gId].displacement += (p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos);
                         break;
                     case 6:
