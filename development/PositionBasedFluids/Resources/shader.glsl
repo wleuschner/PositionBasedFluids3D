@@ -78,12 +78,22 @@ vec3 gradPoly6(vec3 r);
 vec3 gradSpikey(vec3 r);
 vec3 gradViscocity(vec3 r);
 
-
+uint beginIdx[9];
+uint endIdx[9];
 
 void main()
 {
     uint gId = gl_GlobalInvocationID.x;
     Particle p = particles[gId];
+
+    float minDist = 100000.0f;
+    float density = 0.0;
+    vec3  gradSum1 = vec3(0.0,0.0,0.0);
+    float gradSum2 = 0.0;
+    vec3  curl = vec3(0.0,0.0,0.0);
+    vec3  velAccum = vec3(0.0,0.0,0.0);
+    float invRestDensity = 1.0/restDensity;
+
     switch(taskId)
     {
     //Apply external forces
@@ -105,24 +115,73 @@ void main()
     //Update Lambda
     case 4:
         neighborInteraction(gId);
-        memoryBarrier();
+        for(uint i=0;i<9;i++)
+        {
+            for(uint j=beginIdx[i];j<endIdx[i];j++)
+            {
+                Particle n = particles[j];
+                if(p.index!=n.index)
+                {
+                    if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
+                    {
+                        density += kernelPoly6(p.tempPos-n.pos);
+                        vec3 grad = gradSpikey(p.tempPos-n.pos);
+                        gradSum1 += grad;
+                        grad = invRestDensity*-gradSpikey(p.tempPos-n.pos);
+                        gradSum2 += dot(grad,grad);
+                    }
+                }
+            }
+        }
+        density = (invRestDensity*density)-1.0;
+        particles[gId].density = density;
+        gradSum1 = invRestDensity*gradSum1;
+        float gradSum = gradSum2+dot(gradSum1,gradSum1);
+        particles[gId].lambda = -density/(gradSum+cfmRegularization);
         break;
     case 5:
         particles[gId].displacement = vec3(0.0,0.0,0.0);
         neighborInteraction(gId);
-        memoryBarrier();
+        for(uint i=0;i<9;i++)
+        {
+            for(uint j=beginIdx[i];j<endIdx[i];j++)
+            {
+                Particle n = particles[j];
+                if(p.index!=n.index)
+                {
+                    if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
+                    {
+                        float sCorr = -corrConst*pow(kernelPoly6(p.tempPos-n.pos)/kernelPoly6(vec3(kernelSupport,0.0,0.0)*corrDist),corrExp);
+                        particles[gId].displacement += (p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos);
+                    }
+                }
+            }
+        }
+        particles[gId].displacement = invRestDensity*particles[gId].displacement;
         break;
     case 6:
         neighborInteraction(gId);
+        for(uint i=0;i<9;i++)
+        {
+            for(uint j=beginIdx[i];j<endIdx[i];j++)
+            {
+                Particle n = particles[j];
+                if(p.index!=n.index)
+                {
+                    if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
+                    {
+                        minDist = checkParticleCollision(gId,n,minDist);
+                    }
+                }
+            }
+        }
         updateDisplacement(gId);
-        memoryBarrier();
         break;
     case 7:
         updateTempPos(gId);
-        memoryBarrier();
         break;
     case 8:
-        particlesFront[gId] = particles[gId];
+        //particlesFront[gId] = particles[gId];
         p.vel = (1.0/timestep)*(p.tempPos-p.pos);
         particles[gId] = p;
         particlesFront[gId] = p;
@@ -130,11 +189,26 @@ void main()
         break;
     case 9:
         neighborInteraction(gId);
-        memoryBarrier();
+        for(uint i=0;i<9;i++)
+        {
+            for(uint j=beginIdx[i];j<endIdx[i];j++)
+            {
+                Particle n = particles[j];
+                if(p.index!=n.index)
+                {
+                    if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
+                    {
+                        curl += cross(n.vel-particlesFront[gId].vel,gradViscocity(p.tempPos-n.pos));
+                        velAccum += (n.vel-particlesFront[gId].vel)*kernelViscocity(p.tempPos-n.pos);
+                    }
+                }
+            }
+        }
+        particlesFront[gId].vel += timestep*artVisc*velAccum;
+        particlesFront[gId].pos  = p.tempPos;
         break;
     case 10:
         updatePositions(gId);
-        memoryBarrier();
         break;
     //Velocity update
     case 11:
@@ -170,7 +244,7 @@ void insertCountBuckets(uint gId)
 void computeHistogram(uint gId)
 {
     uint acc=0;
-    for(uint i=0;i<nBuckets;i++)
+    for(uint i=0;i<=nBuckets;i++)
     {
         uint tVal = histogram[i];
         histogram[i] = acc;
@@ -261,9 +335,6 @@ void neighborInteraction(uint gId)
     int yPos = int(clamp(int((floor((minOfs.y+p.tempPos.y)/kernelSupport))),0,dimSize.y-1));
     int zPos = int(clamp(int((floor((minOfs.z+p.tempPos.z)/kernelSupport))),0,dimSize.z-1));
 
-    uint beginIdx[9];
-    uint endIdx[9];
-
     int xPosBegin,xPosEnd;
     int yPosBegin,yPosEnd;
     int zPosBegin,zPosEnd;
@@ -313,26 +384,12 @@ void neighborInteraction(uint gId)
     uint topRightFront = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
 
     beginIdx[4] = histogram[topLeftFront];
-    if(topRightFront==nBuckets-1)
-    {
-        endIdx[4] = nParticles;
-    }
-    else
-    {
-        endIdx[4] = histogram[topRightFront+1];
-    }
+    endIdx[4] = histogram[topRightFront+1];
     uint topLeftCenter = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPos));
     uint topRightCenter = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPos));
 
     beginIdx[5] = histogram[topLeftCenter];
-    if(topRightCenter==nBuckets-1)
-    {
-        endIdx[5] = nParticles;
-    }
-    else
-    {
-        endIdx[5] = histogram[topRightCenter+1];
-    }
+    endIdx[5] = histogram[topRightCenter+1];
 
     //Center
     uint centerLeftBack = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosBegin));
@@ -351,77 +408,6 @@ void neighborInteraction(uint gId)
     uint centerRightCenter = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPos));
     beginIdx[8] = histogram[centerLeftCenter];
     endIdx[8] = histogram[centerRightCenter+1];
-
-    //Check for neighborhood and dispatch
-    float minDist = 100000.0f;
-    float density = 0.0;
-    vec3  gradSum1 = vec3(0.0,0.0,0.0);
-    float gradSum2 = 0.0;
-    vec3  curl = vec3(0.0,0.0,0.0);
-    vec3  velAccum = vec3(0.0,0.0,0.0);
-    float invRestDensity = 1.0/restDensity;
-    for(uint i=0;i<9;i++)
-    {
-        for(uint j=beginIdx[i];j<endIdx[i];j++)
-        {
-            Particle n = particles[j];
-            if(p.index!=n.index)
-            {
-                if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
-                {
-                    switch(taskId)
-                    {
-                    case 4:
-                        density += kernelPoly6(p.tempPos-n.pos);
-                        vec3 grad = gradSpikey(p.tempPos-n.pos);
-                        gradSum1 += grad;
-                        grad = invRestDensity*-gradSpikey(p.tempPos-n.pos);
-                        gradSum2 += dot(grad,grad);
-                        break;
-                    case 5:
-                        float sCorr = -corrConst*pow(kernelPoly6(p.tempPos-n.pos)/kernelPoly6(vec3(kernelSupport,0.0,0.0)*corrDist),corrExp);
-                        particles[gId].displacement += (p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos);
-                        break;
-                    case 6:
-                        minDist = checkParticleCollision(gId,n,minDist);
-                        break;
-                    case 7:
-                        break;
-                    case 8:
-                        break;
-                    case 9:
-                        curl += cross(n.vel-particlesFront[gId].vel,gradViscocity(p.tempPos-n.pos));
-                        velAccum += (n.vel-particlesFront[gId].vel)*kernelViscocity(p.tempPos-n.pos);
-                        break;
-                    }
-                }
-            }
-        }
-    }
-
-    switch(taskId)
-    {
-    case 4:
-        density = (invRestDensity*density)-1.0;
-        particles[gId].density = density;
-        gradSum1 = invRestDensity*gradSum1;
-        float gradSum = gradSum2+dot(gradSum1,gradSum1);
-        particles[gId].lambda = -density/(gradSum+cfmRegularization);
-        break;
-    case 5:
-        particles[gId].displacement = invRestDensity*particles[gId].displacement;
-        break;
-    case 6:
-        break;
-    case 7:
-        break;
-    case 8:
-        break;
-    case 9:
-        particlesFront[gId].vel += timestep*artVisc*velAccum;
-        particlesFront[gId].pos  = p.tempPos;
-        break;
-    }
 }
 
 float checkParticleCollision(uint gId,Particle n,float minDist)

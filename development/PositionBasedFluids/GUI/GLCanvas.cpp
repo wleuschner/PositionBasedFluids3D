@@ -35,8 +35,9 @@ void GLCanvas::simulate()
     updateTimer.stop();
     if(running||step)
     {
-        solver->solve();
         particles->bind();
+        solver->solve();
+
         if(!gpu)
         {
             particles->upload();
@@ -149,6 +150,7 @@ void GLCanvas::initializeGL()
 
 void GLCanvas::paintGL()
 {
+    particles->bind();
     Vertex::enableVertexAttribs();
     glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
     glEnableVertexAttribArray(2);
