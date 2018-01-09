@@ -390,8 +390,8 @@ void neighborInteraction(uint gId)
                     case 8:
                         break;
                     case 9:
-                        curl += cross(n.vel-p.vel,gradViscocity(p.tempPos-n.pos));
-                        velAccum += (n.vel-p.vel)*kernelViscocity(p.tempPos-n.pos);
+                        curl += cross(n.vel-particlesFront[gId].vel,gradViscocity(p.tempPos-n.pos));
+                        velAccum += (n.vel-particlesFront[gId].vel)*kernelViscocity(p.tempPos-n.pos);
                         break;
                     }
                 }

@@ -81,6 +81,10 @@ void PBFSolverGPU::solve()
 
 
     GLsync syncObj;
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+    glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
 
     computeProgram->uploadUnsignedInt("taskId",0);
     computeProgram->dispatch(particles.size(),1,1);
