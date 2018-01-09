@@ -108,7 +108,7 @@ void PBFSolverGPU::solve()
 
 
     computeProgram->uploadUnsignedInt("taskId",3);
-    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->dispatch(1,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -226,7 +226,6 @@ float PBFSolverGPU::getKernelSupport()
 
 void PBFSolverGPU::setRestDensity(float density)
 {
-    ((DensityConstraint*)this->constraints[0])->setRestDensity(density);
     this->restDensity = density;
 }
 

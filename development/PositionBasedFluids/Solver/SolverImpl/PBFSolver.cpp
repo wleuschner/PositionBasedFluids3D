@@ -111,7 +111,7 @@ void PBFSolver::solve()
                 glm::vec3 v = (particles[p].tempPos+displacement[p])-particles[p].pos;
                 glm::vec3 n1 = glm::normalize(v);
                 float d = glm::dot(n1,c);
-                float d1 = glm::dot(n1,c)*glm::dot(n1,c)-(glm::dot((c),(c)))+particleSize*particleSize;
+                float d1 = d*d-(glm::dot((c),(c)))+particleSize*particleSize;
                 if(d1>=0.0)
                 {
                     float f = glm::dot(c,c)-(d*d);

@@ -108,13 +108,16 @@ void main()
     case 5:
         particles[gId].displacement = vec3(0.0,0.0,0.0);
         neighborInteraction(gId);
+        memoryBarrier();
         break;
     case 6:
         neighborInteraction(gId);
         updateDisplacement(gId);
+        memoryBarrier();
         break;
     case 7:
         updateTempPos(gId);
+        memoryBarrier();
         break;
     case 8:
         updatePositions(gId);
@@ -165,9 +168,16 @@ void computeHistogram(uint gId)
 
 void reoderParticles(uint gId)
 {
+    for(uint i=0;i<nParticles;i++)
+    {
+        Particle part = particlesFront[i];
+        uint b = part.bucket;
+        particles[histogram[b]+atomicAdd(ofs[b],1)] = part;
+    }
+    /*
     Particle part = particlesFront[gId];
     uint b = part.bucket;
-    particles[histogram[b]+atomicAdd(ofs[b],1)] = part;
+    particles[histogram[b]+atomicAdd(ofs[b],1)] = part;*/
 }
 
 void updateDisplacement(uint gId)
@@ -178,49 +188,55 @@ void updateDisplacement(uint gId)
         vec3 n1 = vec3(0.0,1.0,0.0);
         vec3 r = normalize((p.tempPos)-p.pos);
         float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
-        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
+        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,-1.0,0.0);
         vec3 r = normalize((p.tempPos)-p.pos);
         float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
-        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
+        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(-1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
+        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
+        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,-1.0);
         vec3 r = normalize((p.tempPos)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
+        particles[gId].displacement = p.displacement;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
         vec3 r = normalize((p.tempPos)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        particles[gId].displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
+        particles[gId].displacement = p.displacement;
     }
 }
 
 void updateTempPos(uint gId)
 {
     Particle p = particles[gId];
-    particles[gId].tempPos = p.tempPos + p.displacement;
+    particles[gId].tempPos += p.displacement;
 }
 
 void updatePositions(uint gId)
@@ -370,12 +386,14 @@ void neighborInteraction(uint gId)
     switch(taskId)
     {
     case 4:
-        particles[gId].density = (invRestDensity*density)-1.0;
+        density = (invRestDensity*density)-1.0;
+        particles[gId].density = density;
         gradSum1 = invRestDensity*gradSum1;
         float gradSum = gradSum2+dot(gradSum1,gradSum1);
-        particles[gId].lambda = -particles[gId].density/(gradSum+cfmRegularization);
+        particles[gId].lambda = -density/(gradSum+cfmRegularization);
         break;
     case 5:
+        particles[gId].displacement = invRestDensity*particles[gId].displacement;
         break;
     case 6:
         break;
@@ -390,7 +408,7 @@ float checkParticleCollision(uint gId,Particle n,float minDist)
     float ret = minDist;
     vec3 dVec = n.pos-(p.tempPos+p.displacement);
     float rSumSquared = 4*particleSize*particleSize;
-    vec3 c = n.pos-particles[gId].pos;
+    vec3 c = n.pos-p.pos;
     vec3 v = (p.tempPos+p.displacement)-p.pos;
     vec3 n1 = normalize(v);
     float d = dot(n1,c);
