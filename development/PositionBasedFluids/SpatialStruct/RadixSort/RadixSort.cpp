@@ -19,7 +19,7 @@ void RadixSort::update()
     unsigned int elems = dimSize.x*dimSize.y*dimSize.z;
     if(elems!=histogram.size())
     {
-        histogram.resize(elems);
+        histogram.resize(elems+1);
     }
     if(particles.size()!=sortedIndices.size())
     {
@@ -48,7 +48,7 @@ void RadixSort::update()
 
     //Compute Histogram
     unsigned int acc=0;
-    for(unsigned int i=0;i<elems;i++)
+    for(unsigned int i=0;i<=elems;i++)
     {
         histogram[i]=acc;
         acc+=buckets[i];
@@ -91,88 +91,57 @@ std::list<unsigned int> RadixSort::find(const Particle &p)
     unsigned int nBucket = histogram.size();
 
     //Bottom
-    {
-        {
-            unsigned int bottomLeftBack   = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*(zPosBegin)));
-            unsigned int bottomRightBack   = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*(zPosBegin)));
 
-            beginIdx[0] = histogram[bottomLeftBack];
-            endIdx[0] = histogram[bottomRightBack+1];
-        }
-        {
-            unsigned int bottomLeftFront  = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
-            unsigned int bottomRightFront  = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
+    unsigned int bottomLeftBack   = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*(zPosBegin)));
+    unsigned int bottomRightBack   = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*(zPosBegin)));
 
-            beginIdx[1] = histogram[bottomLeftFront];
-            if(bottomRightFront==nBucket-1)
-            {
-                endIdx[1] = particles.size();
-            }
-            else
-            {
-                endIdx[1] = histogram[bottomRightFront+1];
-            }
+    beginIdx[0] = histogram[bottomLeftBack];
+    endIdx[0] = histogram[bottomRightBack+1];
 
-        }
-        unsigned int bottomLeftCenter = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPos));
-        unsigned int bottomRightCenter = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPos));
+    unsigned int bottomLeftFront  = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
+    unsigned int bottomRightFront  = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
 
-        beginIdx[2] = histogram[bottomLeftCenter];
-        endIdx[2] = histogram[bottomRightCenter+1];
-    }
+    beginIdx[1] = histogram[bottomLeftFront];
+    endIdx[1] = histogram[bottomRightFront+1];
+
+    unsigned int bottomLeftCenter = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPos));
+    unsigned int bottomRightCenter = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPos));
+
+    beginIdx[2] = histogram[bottomLeftCenter];
+    endIdx[2] = histogram[bottomRightCenter+1];
 
     //Top
-    {
-        {
-            unsigned int topLeftBack = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
-            unsigned int topRightBack = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
+    unsigned int topLeftBack = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
+    unsigned int topRightBack = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
 
-            beginIdx[3] = histogram[topLeftBack];
-            endIdx[3] = histogram[topRightBack+1];
-        }
-        {
-            unsigned int topLeftFront = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
-            unsigned int topRightFront = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
+    beginIdx[3] = histogram[topLeftBack];
+    endIdx[3] = histogram[topRightBack+1];
 
-            beginIdx[4] = histogram[topLeftFront];
-            if(topRightFront==nBucket-1)
-            {
-                endIdx[4] = particles.size();
-            }
-            else
-            {
-                endIdx[4] = histogram[topRightFront+1];
-            }
-        }
-        unsigned int topLeftCenter = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPos));
-        unsigned int topRightCenter = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPos));
+    unsigned int topLeftFront = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
+    unsigned int topRightFront = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
 
-        beginIdx[5] = histogram[topLeftCenter];
-        if(topRightCenter==nBucket-1)
-        {
-            endIdx[5] = particles.size();
-        }
-        else
-        {
-            endIdx[5] = histogram[topRightCenter+1];
-        }
-    }
+    beginIdx[4] = histogram[topLeftFront];
+    endIdx[4] = histogram[topRightFront+1];
+
+    unsigned int topLeftCenter = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPos));
+    unsigned int topRightCenter = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPos));
+
+    beginIdx[5] = histogram[topLeftCenter];
+    endIdx[5] = histogram[topRightCenter+1];
 
     //Center
-    {
-        unsigned int centerLeftBack = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosBegin));
-        unsigned int centerRightBack = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosBegin));
+    unsigned int centerLeftBack = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosBegin));
+    unsigned int centerRightBack = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosBegin));
 
-        beginIdx[6] = histogram[centerLeftBack];
-        endIdx[6] = histogram[centerRightBack+1];
-    }
-    {
-        unsigned int centerLeftFront = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosEnd));
-        unsigned int centerRightFront = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosEnd));
+    beginIdx[6] = histogram[centerLeftBack];
+    endIdx[6] = histogram[centerRightBack+1];
 
-        beginIdx[7] = histogram[centerLeftFront];
-        endIdx[7] = histogram[centerRightFront+1];
-    }
+    unsigned int centerLeftFront = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosEnd));
+    unsigned int centerRightFront = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosEnd));
+
+    beginIdx[7] = histogram[centerLeftFront];
+    endIdx[7] = histogram[centerRightFront+1];
+
     unsigned int centerLeftCenter = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPos));
     unsigned int centerRightCenter = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPos));
     beginIdx[8] = histogram[centerLeftCenter];
