@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>611</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -383,8 +383,11 @@
         </item>
         <item>
          <widget class="QDoubleSpinBox" name="spinBoxCFM">
+          <property name="decimals">
+           <number>2</number>
+          </property>
           <property name="maximum">
-           <double>1000.000000000000000</double>
+           <double>10000000.000000000000000</double>
           </property>
           <property name="value">
            <double>600.000000000000000</double>

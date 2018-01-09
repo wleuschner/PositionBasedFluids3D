@@ -41,7 +41,6 @@ void PBFSolverGPU::solve()
     dimSize.y = glm::max(std::ceil(ext.y/kernelSupport),1.0f);
     dimSize.z = glm::max(std::ceil(ext.z/kernelSupport),1.0f);
     unsigned int elems = dimSize.x*dimSize.y*dimSize.z;
-    std::cout<<dimSize.x<<" "<<dimSize.y<<" "<<dimSize.z<<std::endl;
 
     //Setup Compute Shader
     std::vector<unsigned int> bufData(elems);
@@ -108,7 +107,7 @@ void PBFSolverGPU::solve()
 
 
     computeProgram->uploadUnsignedInt("taskId",3);
-    computeProgram->dispatch(1,1,1);
+    computeProgram->dispatch(particles.size(),1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -144,20 +143,27 @@ void PBFSolverGPU::solve()
         computeProgram->uploadUnsignedInt("taskId",7);
         computeProgram->dispatch(particles.size(),1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);        
-        glClientWaitSync(syncObj,0,1000*1000*1000*2);
-        glDeleteSync(syncObj);
-
-        computeProgram->uploadUnsignedInt("taskId",9);
-        computeProgram->dispatch(particles.size(),1,1);
-        glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
         glDeleteSync(syncObj);
 
-
     }
+
     computeProgram->uploadUnsignedInt("taskId",8);
+    computeProgram->dispatch(particles.size(),1,1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+    glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
+
+    computeProgram->uploadUnsignedInt("taskId",9);
+    computeProgram->dispatch(particles.size(),1,1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+    syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+    glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
+
+    computeProgram->uploadUnsignedInt("taskId",10);
     computeProgram->dispatch(particles.size(),1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
