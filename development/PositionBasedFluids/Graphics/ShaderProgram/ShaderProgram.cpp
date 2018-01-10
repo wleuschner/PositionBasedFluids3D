@@ -149,6 +149,24 @@ void ShaderProgram::uploadLight(const std::string& var,const Light& val,const gl
     uploadVec3(specular_string.c_str(),specular);
 }
 
+glm::ivec3 ShaderProgram::getMaxWorkGroupSize()
+{
+    glm::ivec3 size;
+    glGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_SIZE, 0, &size.x );
+    glGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_SIZE, 1, &size.y );
+    glGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_SIZE, 2, &size.z );
+    return size;
+}
+
+glm::ivec3 ShaderProgram::getMaxWorkGroups()
+{
+    glm::ivec3 size;
+    glGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_COUNT, 0, &size.x );
+    glGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_COUNT, 1, &size.y );
+    glGetIntegeri_v( GL_MAX_COMPUTE_WORK_GROUP_COUNT, 2, &size.z );
+    return size;
+}
+
 void ShaderProgram::dispatch(unsigned int gwx,unsigned int gwy,unsigned int gwz,unsigned int lwx,unsigned int lwy,unsigned int lwz)
 {
     glDispatchComputeGroupSizeARB(gwx,gwy,gwz,lwx,lwy,lwz);

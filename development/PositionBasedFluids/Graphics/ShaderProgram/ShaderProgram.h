@@ -37,6 +37,8 @@ public:
     void uploadLight(const std::string& var,const Light& val,const glm::mat4& view);
 
     //Compute Shader
+    glm::ivec3 getMaxWorkGroupSize();
+    glm::ivec3 getMaxWorkGroups();
     void dispatch(unsigned int gwx,unsigned int gwy,unsigned int gwz,unsigned int lwx,unsigned int lwy,unsigned int lwz);
 private:
     unsigned int id;

@@ -9,7 +9,7 @@
 PBFSolver::PBFSolver(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(particles,densityKernel,gradKernel,viscKernel)
 {
     //this->spatialHashMap = (AbstractSpatialStruct*)new SpatialHashMap3D(particles,2000,densityKernel->getRadius());
-    this->spatialHashMap = (AbstractSpatialStruct*)new RadixSort(particles,densityKernel->getRadius(),AABB(glm::vec3(-1.2,-0.7,-1.2),glm::vec3(1.2,1.7,1.2)));
+    this->spatialHashMap = (AbstractSpatialStruct*)new RadixSort(particles,densityKernel->getRadius(),AABB(glm::vec3(-2.0,-2.0,-2.0),glm::vec3(2.0,2.0,2.0)));
     DensityConstraint* ds = new DensityConstraint(densityKernel,gradKernel,this->restDensity);
     this->constraints.push_back((AbstractConstraint*)ds);
 }
