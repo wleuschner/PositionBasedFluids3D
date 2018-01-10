@@ -102,32 +102,6 @@ void PBFSolver::solve()
             }
             displacement[p] = invRestDensity*displacement[p];
 
-            float minDist = std::numeric_limits<float>::infinity();
-            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
-            {
-                glm::vec3 dVec = n->pos-(particles[p].tempPos+displacement[p]);
-                float rSumSquared = 4*particleSize*particleSize;
-                glm::vec3 c = n->pos-particles[p].pos;
-                glm::vec3 v = (particles[p].tempPos+displacement[p])-particles[p].pos;
-                glm::vec3 n1 = glm::normalize(v);
-                float d = glm::dot(n1,c);
-                float d1 = d*d-(glm::dot((c),(c)))+particleSize*particleSize;
-                if(d1>=0.0)
-                {
-                    float f = glm::dot(c,c)-(d*d);
-                    float t = std::sqrt(rSumSquared-f);
-                    float d = glm::dot(t*v,n1);
-                    if(d<minDist)
-                    {
-                        float corr = (d-t);
-                        glm::vec3 tempDispl = particles[p].pos+(t*v)-particles[p].tempPos;
-                        displacement[p] = tempDispl;
-                        minDist=d;
-                    }
-                }
-            }
-
-
             if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+1.5f<0)
             {
                 //std::cout<<glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,1.0,0.0))+0.5f<<std::endl;
@@ -181,6 +155,34 @@ void PBFSolver::solve()
                 float t = -(1.0+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
+
+            float minDist = std::numeric_limits<float>::infinity();
+            float rSumSquared = 4*particleSize*particleSize;
+            glm::vec3 v = (particles[p].tempPos+displacement[p])-particles[p].pos;
+            glm::vec3 n1 = glm::normalize(v);
+            glm::vec3 tempDispl = displacement[p];
+            for(std::list<Particle>::iterator n=neighbors[p].begin();n!=neighbors[p].end();n++)
+            {
+                glm::vec3 c = n->pos-particles[p].pos;
+                float dist = glm::dot(n1,c);
+                if(dist>0.0)
+                {
+                    float f = glm::dot(c,c)-(dist*dist);
+                    if(f<rSumSquared)
+                    {
+                        float t = std::sqrt(rSumSquared-f);
+                        float corr = (dist-t);
+                        if(corr<minDist)
+                        {
+                            //std::cout<<corr<<std::endl;
+                            tempDispl = particles[p].pos+(corr*n1)-particles[p].tempPos;
+
+                            minDist=corr;
+                        }
+                    }
+                }
+            }
+            displacement[p] = tempDispl;
         }
 
         //Update Temporary Particle Positions
