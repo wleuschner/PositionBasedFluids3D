@@ -1,4 +1,6 @@
 #version 430
+#extension GL_ARB_compute_variable_group_size: enable
+
 #define M_PI 3.1415926535897932384626433832795
 
 struct Particle
@@ -55,11 +57,12 @@ layout (std430,binding=3) buffer ofsBuffer
     uint ofs[];
 };
 
-layout( local_size_x = 1, local_size_y = 1, local_size_z = 1 ) in;
+layout( local_size_variable ) in;
 
 
-vec3 updateDisplacement(uint gId,Particle p);
+void updateDisplacement(uint gId);
 void neighborInteraction(uint gId);
+float checkParticleCollision(uint gId,Particle n,float minDist);
 
 float kernelExecute(vec3 r,uint kernelId);
 float kernelPoly6(vec3 r);
@@ -77,9 +80,14 @@ uint endIdx[9];
 void main()
 {
     uint gId = gl_GlobalInvocationID.x;
+    if(gId>=nParticles)
+    {
+        return;
+    }
     Particle p = particles[gId];
     Particle pf = particlesFront[gId];
 
+    float minDist = 100000.0f;
     float density = 0.0;
     vec3  gradSum1 = vec3(0.0,0.0,0.0);
     float gradSum2 = 0.0;
@@ -180,13 +188,15 @@ void main()
         break;
     case 6:
         {
-            vec3 displacement = updateDisplacement(gId,p);
-            float minDist = 1000000.0f;
+            updateDisplacement(gId);
+            p = particles[gId];
+            float minDist = 1000.0f;
             float rSumSquared = 4*particleSize*particleSize;
-            vec3 v = (p.tempPos+displacement)-p.pos;
+            vec3 v = (p.tempPos+p.displacement)-p.pos;
             vec3 n1 = normalize(v);
+            vec3 tempDispl = p.displacement;
+            /*
             neighborInteraction(gId);
-            vec3 tempDispl = displacement;
             for(uint i=0;i<9;i++)
             {
                 for(uint j=beginIdx[i];j<endIdx[i];j++)
@@ -198,29 +208,27 @@ void main()
                         {
                             vec3 c = n.pos-p.pos;
                             float d = dot(n1,c);
-                            if(d>0.0)
+                            float d1 = d*d-(dot(c,c))+particleSize*particleSize;
+                            if(d1>0.0 && d>0.0)
                             {
                                 float f = dot(c,c)-(d*d);
-                                if(f<rSumSquared)
+                                float t = sqrt(rSumSquared-f);
+                                float corr = (d-t);
+                                if(corr<minDist)
                                 {
-                                    float t = sqrt(rSumSquared-f);
-                                    float corr = (d-t);
-                                    if(corr<minDist)
-                                    {
-                                        tempDispl = p.pos+(corr*n1)-p.tempPos;
+                                    //std::cout<<corr<<std::endl;
+                                    tempDispl = p.pos+(corr*n1)-p.tempPos;
 
-                                        minDist=corr;
-                                    }
+                                    minDist=corr;
                                 }
                             }
                         }
                     }
                 }
-            }
+            }*/
             particles[gId].displacement = tempDispl;
+            break;
         }
-        break;
-
     case 7:
         particles[gId].tempPos += p.displacement;
         break;
@@ -250,54 +258,55 @@ void main()
         particlesFront[gId].pos  = pf.tempPos;
         break;
     }
+    groupMemoryBarrier();
 }
 
-vec3 updateDisplacement(uint gId,Particle p)
+void updateDisplacement(uint gId)
 {
-    vec3 displacement = p.displacement;
-    if(dot((p.tempPos+displacement),vec3(0.0,1.0,0.0))+1.5f<0.0)
+    Particle p = particles[gId];
+    if(dot((p.tempPos+p.displacement),vec3(0.0,1.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,1.0,0.0);
-        vec3 r = normalize((p.tempPos+displacement)-p.pos);
+        vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
-        displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,-1.0,0.0);
-        vec3 r = normalize((p.tempPos+displacement)-p.pos);
+        vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
-        displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(-1.0,0.0,0.0);
-        vec3 r = normalize((p.tempPos+displacement)-p.pos);
+        vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(1.0,0.0,0.0);
-        vec3 r = normalize((p.tempPos+displacement)-p.pos);
+        vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,-1.0);
-        vec3 r = normalize((p.tempPos+displacement)-p.pos);
+        vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
-        vec3 r = normalize((p.tempPos+displacement)-p.pos);
+        vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
         float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
-        displacement = p.pos+(r*t)-p.tempPos;
+        p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    return displacement;
+    particles[gId].displacement = p.displacement;
 }
 
 void neighborInteraction(uint gId)
@@ -374,6 +383,33 @@ void neighborInteraction(uint gId)
     uint centerRightCenter = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPos));
     beginIdx[8] = histogram[centerLeftCenter];
     endIdx[8] = histogram[centerRightCenter+1];
+}
+
+float checkParticleCollision(uint gId,Particle n,float minDist)
+{
+    Particle p = particles[gId];
+    float ret = minDist;
+    vec3 dVec = n.pos-(p.tempPos+p.displacement);
+    float rSumSquared = 4*particleSize*particleSize;
+    vec3 c = n.pos-p.pos;
+    vec3 v = (p.tempPos+p.displacement)-p.pos;
+    vec3 n1 = normalize(v);
+    float d = dot(n1,c);
+    float d1 = d*d-(dot((c),(c)))+particleSize*particleSize;
+    if(d1>=0.0)
+    {
+        float f = dot(c,c)-(d*d);
+        float t = sqrt(rSumSquared-f);
+        float d = dot(t*v,n1);
+        if(d<minDist)
+        {
+            float corr = (d-t);
+            vec3 tempDispl = p.pos+(t*v)-p.tempPos;
+            particles[gId].displacement = tempDispl;
+            minDist=d;
+        }
+    }
+    return minDist;
 }
 
 float kernelExecute(vec3 r,uint kernelId)

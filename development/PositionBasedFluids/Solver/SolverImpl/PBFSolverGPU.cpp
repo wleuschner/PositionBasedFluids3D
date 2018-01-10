@@ -78,7 +78,8 @@ void PBFSolverGPU::solve()
     computeProgram->uploadUnsignedInt("nParticles",particles.size());
     computeProgram->uploadUnsignedInt("nBuckets",elems);
 
-
+    unsigned int workGroupSize = 256;
+    unsigned int workGroups = std::ceil(particles.size()/((float)workGroupSize));
 
     GLsync syncObj;
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
@@ -87,7 +88,7 @@ void PBFSolverGPU::solve()
     glDeleteSync(syncObj);
 
     computeProgram->uploadUnsignedInt("taskId",0);
-    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
@@ -95,7 +96,7 @@ void PBFSolverGPU::solve()
     glDeleteSync(syncObj);
 
     computeProgram->uploadUnsignedInt("taskId",1);
-    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -103,7 +104,7 @@ void PBFSolverGPU::solve()
 
 
     computeProgram->uploadUnsignedInt("taskId",2);
-    computeProgram->dispatch(1,1,1);
+    computeProgram->dispatch(1,1,1,1,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -111,7 +112,7 @@ void PBFSolverGPU::solve()
 
 
     computeProgram->uploadUnsignedInt("taskId",3);
-    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -124,28 +125,28 @@ void PBFSolverGPU::solve()
     for(unsigned i=0;i<iterations;i++)
     {
         computeProgram->uploadUnsignedInt("taskId",4);
-        computeProgram->dispatch(particles.size(),1,1);
+        computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
         glDeleteSync(syncObj);
 
         computeProgram->uploadUnsignedInt("taskId",5);
-        computeProgram->dispatch(particles.size(),1,1);
+        computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
         glDeleteSync(syncObj);
 
         computeProgram->uploadUnsignedInt("taskId",6);
-        computeProgram->dispatch(particles.size(),1,1);
+        computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
         glDeleteSync(syncObj);
 
         computeProgram->uploadUnsignedInt("taskId",7);
-        computeProgram->dispatch(particles.size(),1,1);
+        computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
         syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
         glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -154,14 +155,14 @@ void PBFSolverGPU::solve()
     }
 
     computeProgram->uploadUnsignedInt("taskId",8);
-    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
     glDeleteSync(syncObj);
 
     computeProgram->uploadUnsignedInt("taskId",9);
-    computeProgram->dispatch(particles.size(),1,1);
+    computeProgram->dispatch(workGroups,1,1,workGroupSize,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);

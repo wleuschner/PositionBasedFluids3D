@@ -149,7 +149,7 @@ void ShaderProgram::uploadLight(const std::string& var,const Light& val,const gl
     uploadVec3(specular_string.c_str(),specular);
 }
 
-void ShaderProgram::dispatch(unsigned int wx,unsigned int wy,unsigned wz)
+void ShaderProgram::dispatch(unsigned int gwx,unsigned int gwy,unsigned int gwz,unsigned int lwx,unsigned int lwy,unsigned int lwz)
 {
-    glDispatchCompute(wx,wy,wz);
+    glDispatchComputeGroupSizeARB(gwx,gwy,gwz,lwx,lwy,lwz);
 }
