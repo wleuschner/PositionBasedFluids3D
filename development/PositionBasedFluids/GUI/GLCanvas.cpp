@@ -125,12 +125,12 @@ void GLCanvas::initializeGL()
     particles = new ParticleBuffer();
     particles->bind();
     unsigned int cc = 0;
-    int ppu = 24;
-    for( int z=-ppu;z!=ppu+1;z++)
+    int ppu = 10;
+    for( int z=-ppu;z!=ppu;z++)
     {
-        for( int y=-ppu;y!=ppu+1;y++)
+        for( int y=-ppu;y!=ppu;y++)
         {
-            for( int x=-ppu;x!=ppu+1;x++)
+            for( int x=-ppu;x!=ppu;x++)
             {
                 /*particles->addParticle(Particle(cc,glm::vec3(x/10.0,y/10.0,z/10.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 cc++;*/
