@@ -183,7 +183,7 @@ void main()
                     {
                         if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
-                            float sCorr = -corrConst*pow(kernelPoly6(p.tempPos-n.pos)/kernelPoly6(vec3(kernelSupport,0.0,0.0)*corrDist),corrExp);
+                            float sCorr = -corrConst*pow(kernelPoly6(p.tempPos-n.pos)/kernelPoly6(vec3(kernelSupport*corrDist,0.0,0.0)),corrExp);
                             displacement += (p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos);
                         }
                     }
@@ -319,7 +319,7 @@ Particle checkBBoxCollision(Particle p)
         float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.5))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
@@ -494,6 +494,10 @@ vec3 gradPoly6(vec3 r)
 
 vec3 gradSpikey(vec3 r)
 {
+    /*if(length(r)==0)
+    {
+        r = vec3(0.0,1.0,0.0);
+    }*/
     return ((-45.0f/(M_PI*(pow(kernelSupport,6))))*(pow((kernelSupport-length(r)),2))*normalize(r));
 }
 

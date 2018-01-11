@@ -78,9 +78,7 @@ void PBFSolverGPU::solve()
     computeProgram->uploadUnsignedInt("nParticles",particles.size());
     computeProgram->uploadUnsignedInt("nBuckets",elems);
 
-    glm::ivec3 maxSize = computeProgram->getMaxWorkGroupSize();
-
-    //std::cout<<maxSize.x<<" "<<maxSize.y<<" "<<maxSize.z<<std::endl;
+    glm::ivec3 maxSize = computeProgram->getMaxWorkGroups();
 
     unsigned int workGroupSize = 1024;
     unsigned int workGroups = std::ceil(particles.size()/((float)workGroupSize));

@@ -125,7 +125,7 @@ void GLCanvas::initializeGL()
     particles = new ParticleBuffer();
     particles->bind();
     unsigned int cc = 0;
-    int ppu = 15;
+    int ppu = 24;
     for( int z=-ppu;z!=ppu+1;z++)
     {
         for( int y=-ppu;y!=ppu+1;y++)
