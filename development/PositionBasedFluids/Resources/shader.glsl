@@ -156,7 +156,7 @@ void main()
                             density += kernelPoly6(p.tempPos-n.pos);
                             vec3 grad = gradSpikey(p.tempPos-n.pos);
                             gradSum1 += grad;
-                            grad = invRestDensity*gradSpikey(p.tempPos-n.pos);
+                            grad = invRestDensity*-gradSpikey(p.tempPos-n.pos);
                             gradSum2 += dot(grad,grad);
                         }
                     }

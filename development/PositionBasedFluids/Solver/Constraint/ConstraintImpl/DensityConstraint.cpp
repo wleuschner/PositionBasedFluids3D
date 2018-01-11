@@ -32,7 +32,7 @@ float DensityConstraint::gradientSum(const Particle& x,const std::list<Particle>
 
     for(std::list<Particle>::const_iterator pit=particles.begin();pit!=particles.end();pit++)
     {
-        grad = invRestDensity*(gradKernel->grad(x.pos-pit->pos));
+        grad = invRestDensity*(-gradKernel->grad(x.pos-pit->pos));
         result += glm::dot(grad,grad);
     }
     return result;
