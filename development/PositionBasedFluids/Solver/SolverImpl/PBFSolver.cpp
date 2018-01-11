@@ -109,7 +109,7 @@ void PBFSolver::solve()
 
                 glm::vec3 n1 = glm::vec3(0.0,1.0,0.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(1.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,-1.5f*n1))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
 
@@ -119,40 +119,40 @@ void PBFSolver::solve()
                 //displacement[p] =-1.0f*((glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,-1.0,0.0)))+1.5f)*glm::vec3(0.0,-1.0,0.0);
                 glm::vec3 n1 = glm::vec3(0.0,-1.0,0.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(1.5+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,-1.5f*n1))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
 
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.0f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.5f<0)
             {
                 //displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(-1.0,0.0,0.0))+1.0f)*glm::vec3(-1.0,0.0,0.0);
                 glm::vec3 n1 = glm::vec3(-1.0,0.0,0.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(1.0+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,-1.5f*n1))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.0f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.5f<0)
             {
                 //displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(+1.0,0.0,0.0))+1.0f)*glm::vec3(+1.0,0.0,0.0);
                 glm::vec3 n1 = glm::vec3(1.0,0.0,0.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(1.0+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,-1.5f*n1))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.0f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.5))+1.5f<0)
             {
                 //displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,-1.0))+1.0f)*glm::vec3(0.0,0.0,-1.0);
                 glm::vec3 n1 = glm::vec3(0.0,0.0,-1.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(1.0+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,-1.5f*n1))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
-            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.0f<0)
+            if(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.5f<0)
             {
                 //displacement[p]=-1.0f*(glm::dot((particles[p].tempPos+displacement[p]),glm::vec3(0.0,0.0,+1.0))+1.0f)*glm::vec3(0.0,0.0,+1.0);
                 glm::vec3 n1 = glm::vec3(0.0,0.0,1.0);
                 glm::vec3 r = glm::normalize((particles[p].tempPos+displacement[p])-particles[p].pos);
-                float t = -(1.0+glm::dot(n1,particles[p].pos))/glm::dot(n1,r);
+                float t = -(1.5+glm::dot(n1,-1.5f*n1))/glm::dot(n1,r);
                 displacement[p] = particles[p].pos+(r*t)-particles[p].tempPos;
             }
 

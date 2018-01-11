@@ -204,6 +204,7 @@ void main()
 
 
             neighborInteraction(gId,p);
+            /*
             for(uint i=0;i<9;i++)
             {
                 for(uint j=beginIdx[i];j<endIdx[i];j++)
@@ -231,7 +232,7 @@ void main()
                     }
                 }
             }
-            p.displacement = tempDispl;
+            p.displacement = tempDispl;*/
             particles[gId] = checkBBoxCollision(p);
             break;
         }
@@ -287,42 +288,42 @@ Particle checkBBoxCollision(Particle p)
     {
         vec3 n1 = vec3(0.0,1.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5f+dot(n1,p.pos))/dot(n1,r);
+        float t = -(1.5f+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
     if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,-1.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5+dot(n1,p.pos))/dot(n1,r);
+        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(-1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,-1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.5))+1.5f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.0+dot(n1,p.pos))/dot(n1,r);
+        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
     return p;
