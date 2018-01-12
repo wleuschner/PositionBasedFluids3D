@@ -214,9 +214,9 @@ void PBFSolver::solve()
         }
         if(glm::length(particles[p].curl)>0.0001f)
         {
-            particles[p].vel += timestep*artVort*glm::cross(glm::normalize(particles[p].curl),particles[p].curl);
+            particles[p].vel += artVort*glm::cross(glm::normalize(particles[p].curl),particles[p].curl);
         }
-        particles[p].vel += timestep*artVisc*velAccum;
+        particles[p].vel += artVisc*velAccum;
         particles[p].pos  = particles[p].tempPos;
     }
     spatialHashMap->clear();
