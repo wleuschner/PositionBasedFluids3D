@@ -10,6 +10,7 @@ public:
     void bind();
     void addParticle(Particle particle);
     void upload();
+    void clear();
     unsigned int getNumParticles();
     std::vector<Particle>& getParticles();
 private:

@@ -123,26 +123,8 @@ void GLCanvas::initializeGL()
 
 
     particles = new ParticleBuffer();
-    particles->bind();
-    unsigned int cc = 0;
-    int ppu = 10;
-    for( int z=-ppu;z!=ppu;z++)
-    {
-        for( int y=-ppu;y!=ppu;y++)
-        {
-            for( int x=-ppu;x!=ppu+1;x++)
-            {
-                /*particles->addParticle(Particle(cc,glm::vec3(x/10.0,y/10.0,z/10.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
-                cc++;*/
-                //particles->addParticle(Particle(cc,glm::vec3(x/5.0-10,y/5.0,z/5.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
-                //cc++;
+    reset();
 
-                particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+ppu)/(ppu*2.0)),-0.5+((y+ppu)/(ppu*2.0)),-0.5+((z+ppu)/(ppu*2.0))),glm::vec3(0.0,0.0,0.0),1.0,0.0));
-                cc++;
-            }
-        }
-    }
-    particles->upload();
     pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
     pbfGpu = new PBFSolverGPU(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
@@ -292,6 +274,31 @@ void GLCanvas::keyPressEvent(QKeyEvent *event)
 void GLCanvas::keyReleaseEvent(QKeyEvent *event)
 {
     std::cout<<"KEYRELEASE"<<std::endl;
+}
+
+void GLCanvas::reset()
+{
+    particles->clear();
+    particles->bind();
+    unsigned int cc = 0;
+    int ppu = 15;
+    for( int z=-ppu;z!=ppu;z++)
+    {
+        for( int y=-ppu;y!=ppu;y++)
+        {
+            for( int x=-ppu;x!=ppu+1;x++)
+            {
+                /*particles->addParticle(Particle(cc,glm::vec3(x/10.0,y/10.0,z/10.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                cc++;*/
+                //particles->addParticle(Particle(cc,glm::vec3(x/5.0-10,y/5.0,z/5.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                //cc++;
+
+                particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+ppu)/(ppu*2.0)),-0.5+((y+ppu)/(ppu*2.0)),-0.5+((z+ppu)/(ppu*2.0))),glm::vec3(0.0,0.0,0.0),1.0,0.0));
+                cc++;
+            }
+        }
+    }
+    particles->upload();
 }
 
 void GLCanvas::setNumIterations(int val)

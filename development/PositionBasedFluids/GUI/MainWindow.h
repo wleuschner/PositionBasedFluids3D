@@ -9,6 +9,9 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 public:
     MainWindow();
+protected slots:
+    void loadParameters();
+    void saveParameters();
 private:
     Ui::MainWindow ui;
 };

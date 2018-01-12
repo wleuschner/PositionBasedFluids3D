@@ -22,6 +22,11 @@ void ParticleBuffer::upload()
     glBufferData(GL_ARRAY_BUFFER,particles.size()*sizeof(Particle),(void*)particles.data(),GL_DYNAMIC_DRAW);
 }
 
+void ParticleBuffer::clear()
+{
+    particles.clear();
+}
+
 unsigned int ParticleBuffer::getNumParticles()
 {
     return particles.size();

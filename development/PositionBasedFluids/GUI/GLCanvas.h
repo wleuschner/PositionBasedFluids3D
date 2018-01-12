@@ -29,6 +29,8 @@ protected:
     void keyPressEvent(QKeyEvent *event);
     void keyReleaseEvent(QKeyEvent *event);
 protected slots:
+    void reset();
+
     void setNumIterations(int val);
     void setTimestep(double val);
     void setKernelSupport(double val);
