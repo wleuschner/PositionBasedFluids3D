@@ -374,6 +374,17 @@ void GLCanvas::setViscKernel(int index)
 
 void GLCanvas::setGPU(int state)
 {
+    unsigned int iter = solver->getNumIterations();
+    float particleSize = solver->getPartSize();
+    float kernelSupport = solver->getKernelSupport();
+    float timestep = solver->getTimestep();
+    float restDensity = solver->getRestDensity();
+    float artVisc = solver->getArtVisc();
+    float artVort = solver->getArtVort();
+    float cfm = solver->getCfmRegularization();
+    float corrConst = solver->getCorrConst();
+    float corrDist = solver->getCorrDist();
+    float corrExp = solver->getCorrExp();
     if(state)
     {
         this->gpu = true;
@@ -384,4 +395,15 @@ void GLCanvas::setGPU(int state)
         this->gpu = false;
         solver = (AbstractSolver*)pbf;
     }
+    solver->setNumIterations(iter);
+    solver->setPartSize(particleSize);
+    solver->setKernelSupport(kernelSupport);
+    solver->setTimestep(timestep);
+    solver->setRestDensity(restDensity);
+    solver->setArtVisc(artVisc);
+    solver->setArtVort(artVort);
+    solver->setCfmRegularization(cfm);
+    solver->setCorrConst(corrConst);
+    solver->setCorrDist(corrDist);
+    solver->setCorrExp(corrExp);
 }
