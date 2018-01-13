@@ -263,17 +263,19 @@ void main()
                     {
                         if(dot(pf.tempPos-n.pos,pf.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
-                            curl += cross(n.vel-pf.vel,gradViscocity(pf.tempPos-n.pos));
-                            velAccum += (n.vel-pf.vel)*kernelViscocity(pf.tempPos-n.pos);
+                            curl += cross(n.vel-pf.vel,gradSpikey(pf.tempPos-n.pos));
+                            velAccum += (n.vel-pf.vel)*kernelPoly6(pf.tempPos-n.pos);
                         }
                     }
                 }
             }
+            /*
             if(dot(curl,curl)>0.0)
             {
                 particlesFront[gId].vel += artVort*cross(normalize(curl),curl);
             }
-            particlesFront[gId].vel += artVisc*velAccum;
+            */
+            particlesFront[gId].vel += timestep*artVisc*velAccum;
             particlesFront[gId].pos  = pf.tempPos;
             break;
         }
@@ -312,18 +314,18 @@ Particle checkBBoxCollision(Particle p)
         float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,-1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
+        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
+        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
     return p;
@@ -450,17 +452,31 @@ float kernelExecute(vec3 r,uint kernelId)
 
 float kernelPoly6(vec3 r)
 {
+    if(dot(r,r)==0)
+    {
+        return 0;
+    }
     return (315.0/(64*M_PI*pow(kernelSupport,9)))*pow((kernelSupport*kernelSupport-dot(r,r)),3);
 }
 
 float kernelSpikey(vec3 r)
 {
+    if(dot(r,r)==0)
+    {
+        return 0;
+    }
     return (15.0/(M_PI*pow(kernelSupport,6)))*pow((kernelSupport-length(r)),3);
 }
 
 float kernelViscocity(vec3 r)
 {
-    return 0;
+    if(dot(r,r)==0)
+    {
+        return 0;
+    }
+    float rl = length(r);
+    return -(pow(rl,3)/(2*pow(kernelSupport,3)))+(pow(rl,2)/(pow(kernelSupport,2)))+(kernelSupport/(2*rl));
+    //return (45.0/(M_PI*pow(kernelSupport,6)))*(kernelSupport-length(r));
 }
 
 vec3 gradExecute(vec3 r,uint kernelId)
@@ -485,6 +501,10 @@ vec3 gradExecute(vec3 r,uint kernelId)
 
 vec3 gradPoly6(vec3 r)
 {
+    if(dot(r,r)==0)
+    {
+        return vec3(0.0,0.0,0.0);
+    }
     return vec3(-(945*(r.x)*pow((-pow((r.x),2)+pow((r.y),2)+pow((r.z),2)+kernelSupport*kernelSupport),2))/(32*M_PI*pow(kernelSupport,9)),
                      -(945*(r.y)*pow((-pow((r.x),2)+pow((r.y),2)+pow((r.z),2)+kernelSupport*kernelSupport),2))/(32*M_PI*pow(kernelSupport,9)),
                      -(945*(r.z)*pow((-pow((r.x),2)+pow((r.y),2)+pow((r.z),2)+kernelSupport*kernelSupport),2))/(32*M_PI*pow(kernelSupport,9)));
@@ -494,6 +514,10 @@ vec3 gradPoly6(vec3 r)
 
 vec3 gradSpikey(vec3 r)
 {
+    if(dot(r,r)==0)
+    {
+        return vec3(0.0,0.0,0.0);
+    }
     /*if(length(r)==0)
     {
         r = vec3(0.0,1.0,0.0);
@@ -504,5 +528,9 @@ vec3 gradSpikey(vec3 r)
 
 vec3 gradViscocity(vec3 r)
 {
+    if(dot(r,r)==0)
+    {
+        return vec3(0.0,0.0,0.0);
+    }
     return -(pow(length(r),3)/(2*pow(kernelSupport,3)))-(pow(length(r),2)/(pow(kernelSupport,2)))+(kernelSupport/(2*length(r)))-1;
 }
