@@ -14,7 +14,9 @@ public:
     void attachColorImage(const Texture& image, unsigned int attNo);
     void attachDepthImage(const Texture& image);
     void attachStencilImage(const Texture& image);
-private:
+
+    bool isComplete();
+public:
     unsigned int id;
 };
 

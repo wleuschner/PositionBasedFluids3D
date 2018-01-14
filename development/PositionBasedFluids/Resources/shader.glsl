@@ -275,7 +275,7 @@ void main()
                 particlesFront[gId].vel += artVort*cross(normalize(curl),curl);
             }
             */
-            particlesFront[gId].vel += timestep*artVisc*velAccum;
+            particlesFront[gId].vel += artVisc*velAccum;
             particlesFront[gId].pos  = pf.tempPos;
             break;
         }

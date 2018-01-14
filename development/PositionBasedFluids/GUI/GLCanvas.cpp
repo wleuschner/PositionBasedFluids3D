@@ -10,6 +10,8 @@
 #include"../Solver/Kernel/KernelImpl/Poly6Kernel.h"
 #include"../Solver/Kernel/KernelImpl/SpikyKernel.h"
 #include"../Solver/Kernel/KernelImpl/ViscocityKernel.h"
+#include"../Graphics/Texture/Texture.h"
+#include"../Graphics/FrameBufferObject/FrameBufferObject.h"
 
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
@@ -24,6 +26,7 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     format.setMajorVersion(4);
     format.setMinorVersion(4);
     setFormat(format);
+    makeCurrent();
 
 
     connect(&updateTimer,SIGNAL(timeout()),this,SLOT(simulate()));
@@ -84,8 +87,6 @@ void GLCanvas::initializeGL()
     //glDisable(GL_CULL_FACE);
 
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-
     Shader vert(GL_VERTEX_SHADER,"Resources/shader.vert");
     if(!vert.compile())
     {
@@ -129,6 +130,7 @@ void GLCanvas::initializeGL()
     pbfGpu = new PBFSolverGPU(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
     //particles->addParticle(Particle(0,glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+
 }
 
 void GLCanvas::paintGL()

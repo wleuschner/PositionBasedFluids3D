@@ -3,7 +3,7 @@
 
 FrameBufferObject::FrameBufferObject()
 {
-    glCreateFramebuffers(1,&id);
+    glGenFramebuffers(1,&id);
 }
 
 FrameBufferObject::~FrameBufferObject()
@@ -13,12 +13,12 @@ FrameBufferObject::~FrameBufferObject()
 
 void FrameBufferObject::bind()
 {
-    glBindFramebuffer(id,GL_FRAMEBUFFER);
+    glBindFramebuffer(GL_FRAMEBUFFER,id);
 }
 
-void unbind()
+void FrameBufferObject::unbind()
 {
-    glBindFramebuffer(0,GL_FRAMEBUFFER);
+    glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
 
 void FrameBufferObject::resize(unsigned int w,unsigned int h)
@@ -41,4 +41,9 @@ void FrameBufferObject::attachDepthImage(const Texture& image)
 void FrameBufferObject::attachStencilImage(const Texture& image)
 {
     glFramebufferTexture(GL_FRAMEBUFFER,GL_STENCIL_ATTACHMENT,image.id,0);
+}
+
+bool FrameBufferObject::isComplete()
+{
+    return glCheckFramebufferStatus(GL_FRAMEBUFFER)==GL_FRAMEBUFFER_COMPLETE;
 }
