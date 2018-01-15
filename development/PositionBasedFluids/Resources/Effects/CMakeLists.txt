@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.8)
 
-add_subdirectory("Effects")
-add_subdirectory("Simulation")
+add_subdirectory("Surface")
+add_subdirectory("Particles")
 
 set(RES_FILES
    ${RES_FILES}

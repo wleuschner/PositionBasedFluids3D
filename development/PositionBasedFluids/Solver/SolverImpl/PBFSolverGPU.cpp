@@ -8,7 +8,7 @@
 
 PBFSolverGPU::PBFSolverGPU(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(particles,densityKernel,gradKernel,viscKernel)
 {
-    Shader computeShader(GL_COMPUTE_SHADER,"Resources/shader.glsl");
+    Shader computeShader(GL_COMPUTE_SHADER,"Resources/Simulation/simulation.comp");
     if(!computeShader.compile())
     {
         std::cout<<computeShader.compileLog()<<std::endl;

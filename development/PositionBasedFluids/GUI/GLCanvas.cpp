@@ -87,13 +87,13 @@ void GLCanvas::initializeGL()
     //glDisable(GL_CULL_FACE);
 
 
-    Shader vert(GL_VERTEX_SHADER,"Resources/shader.vert");
+    Shader vert(GL_VERTEX_SHADER,"Resources/Effects/Particles/particles.vert");
     if(!vert.compile())
     {
         std::cout<<vert.compileLog().c_str()<<std::endl;
     }
 
-    Shader frag(GL_FRAGMENT_SHADER,"Resources/shader.frag");
+    Shader frag(GL_FRAGMENT_SHADER,"Resources/Effects/Particles/particles.frag");
     if(!frag.compile())
     {
         std::cout<<frag.compileLog().c_str()<<std::endl;
