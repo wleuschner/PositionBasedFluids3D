@@ -71,6 +71,8 @@ private:
     QSurfaceFormat format;
     Camera camera;
     ShaderProgram* particleProgram;
+    ShaderProgram* depthProgram;
+    ShaderProgram* smoothProgram;
     ShaderProgram* surfaceProgram;
     ParticleBuffer* particles;
     unsigned int vao;

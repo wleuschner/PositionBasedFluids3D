@@ -89,27 +89,50 @@ void GLCanvas::initializeGL()
 
     glEnable(GL_PROGRAM_POINT_SIZE);
 
-    //Load Surface Shaders
-    Shader surfaceVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/surface.vert");
-    if(!surfaceVert.compile())
+    //Load Depth Shaders
+    Shader depthVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/depth.vert");
+    if(!depthVert.compile())
     {
-        std::cout<<surfaceVert.compileLog().c_str()<<std::endl;
+        std::cout<<depthVert.compileLog().c_str()<<std::endl;
     }
 
-    Shader surfaceFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Surface/surface.frag");
-    if(!surfaceFrag.compile())
+    Shader depthFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Surface/depth.frag");
+    if(!depthFrag.compile())
     {
-        std::cout<<surfaceFrag.compileLog().c_str()<<std::endl;
+        std::cout<<depthFrag.compileLog().c_str()<<std::endl;
     }
 
-    surfaceProgram = new ShaderProgram();
-    surfaceProgram->attachShader(surfaceVert);
-    surfaceProgram->attachShader(surfaceFrag);
-    if(!surfaceProgram->link())
+    depthProgram = new ShaderProgram();
+    depthProgram->attachShader(depthVert);
+    depthProgram->attachShader(depthFrag);
+    if(!depthProgram->link())
     {
-        std::cout<<surfaceProgram->linkLog().c_str()<<std::endl;
+        std::cout<<depthProgram->linkLog().c_str()<<std::endl;
     }
-    surfaceProgram->bind();
+    depthProgram->bind();
+
+    //Load Smoothing Shader
+    Shader smoothVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/smooth.vert");
+    if(!smoothVert.compile())
+    {
+        std::cout<<smoothVert.compileLog().c_str()<<std::endl;
+    }
+
+    Shader smoothFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Surface/smooth.frag");
+    if(!smoothFrag.compile())
+    {
+        std::cout<<smoothFrag.compileLog().c_str()<<std::endl;
+    }
+
+    smoothProgram = new ShaderProgram();
+    smoothProgram->attachShader(depthVert);
+    smoothProgram->attachShader(depthFrag);
+    if(!smoothProgram->link())
+    {
+        std::cout<<smoothProgram->linkLog().c_str()<<std::endl;
+    }
+    smoothProgram->bind();
+
     //Load Particle Shaders
     Shader particleVert(GL_VERTEX_SHADER,"Resources/Effects/Particles/particles.vert");
     if(!particleVert.compile())
@@ -216,17 +239,17 @@ void GLCanvas::renderSurface()
 
     glPointSize(particleSize);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    surfaceProgram->bind();
+    depthProgram->bind();
     view = camera.getView();
     glm::mat4 modelView = view*model;
     glm::mat4 pvm = projection*modelView;
     glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
-    surfaceProgram->uploadScalar("particleSize",particleSize);
-    surfaceProgram->uploadMat4("modelView",modelView);
-    surfaceProgram->uploadMat4("pvm",pvm);
-    surfaceProgram->uploadMat4("view",view);
-    surfaceProgram->uploadMat3("normalMatrix",normalMatrix);
-    surfaceProgram->uploadLight("light0",light,view);
+    depthProgram->uploadScalar("particleSize",particleSize);
+    depthProgram->uploadMat4("modelView",modelView);
+    depthProgram->uploadMat4("pvm",pvm);
+    depthProgram->uploadMat4("view",view);
+    depthProgram->uploadMat3("normalMatrix",normalMatrix);
+    depthProgram->uploadLight("light0",light,view);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
 }
 
