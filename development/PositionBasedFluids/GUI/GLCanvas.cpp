@@ -236,8 +236,19 @@ void GLCanvas::renderSurface()
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(3);
-
     glPointSize(particleSize);
+
+    FrameBufferObject fbo;
+    Texture depthImage;
+    depthImage.bind(0);
+    depthImage.createDepthImage(this->width(),this->height());
+    fbo.bind();
+    fbo.attachDepthImage(depthImage);
+    fbo.setRenderBuffer({GL_NONE});
+    if(!fbo.isComplete())
+    {
+        std::cout<<"FBO incomplete"<<std::endl;
+    }
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     depthProgram->bind();
     view = camera.getView();
@@ -251,6 +262,7 @@ void GLCanvas::renderSurface()
     depthProgram->uploadMat3("normalMatrix",normalMatrix);
     depthProgram->uploadLight("light0",light,view);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
+    fbo.unbind();
 }
 
 void GLCanvas::resizeGL(int w, int h)
