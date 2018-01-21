@@ -81,6 +81,7 @@ private:
 
     Light light;
     Model *sphere;
+    VertexBuffer* screenQuad;
 
     glm::mat4 projection;
     glm::mat4 view;

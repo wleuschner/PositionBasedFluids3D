@@ -10,8 +10,8 @@ struct LightSource
 
 layout (location=0) in vec3 pos;
 layout (location=1) in vec3 normal;
-layout (location=2) in vec3 ofs;
-layout (location=3) in float dens;
+layout (location=3) in vec3 ofs;
+layout (location=4) in float dens;
 flat out float density;
 uniform float particleSize;
 uniform mat4 pvm;

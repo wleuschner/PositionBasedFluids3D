@@ -8,8 +8,8 @@ struct LightSource
     vec3 spec;
 };
 
-layout (location=2) in vec3 pos;
-layout (location=3) in float dens;
+layout (location=3) in vec3 pos;
+layout (location=4) in float dens;
 uniform float particleSize;
 uniform mat4 pvm;
 uniform mat4 modelView;

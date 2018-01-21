@@ -1,6 +1,7 @@
 #include"GLCanvas.h"
 #include<QKeyEvent>
 #include<QMouseEvent>
+#include<QOpenGLFramebufferObject>
 
 #include<glm/gtc/matrix_transform.hpp>
 #include<iostream>
@@ -83,9 +84,9 @@ void GLCanvas::initializeGL()
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_DEPTH_TEST);
 
-    glCullFace(GL_BACK);
-    glEnable(GL_CULL_FACE);
-    //glDisable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+    //glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -125,8 +126,8 @@ void GLCanvas::initializeGL()
     }
 
     smoothProgram = new ShaderProgram();
-    smoothProgram->attachShader(depthVert);
-    smoothProgram->attachShader(depthFrag);
+    smoothProgram->attachShader(smoothVert);
+    smoothProgram->attachShader(smoothFrag);
     if(!smoothProgram->link())
     {
         std::cout<<smoothProgram->linkLog().c_str()<<std::endl;
@@ -158,9 +159,34 @@ void GLCanvas::initializeGL()
     //Create Light
     light = Light(glm::vec3(-10.0,10.0,5.0));
 
+    //Create Screenquad
+    std::vector<Vertex> screenQuadVerts(6);
+    Vertex s1,s2,s3,s4,s5,s6;
+    s1.pos = glm::vec3(-1.0f,1.0f,0.0f);
+    s1.uv = glm::vec2(0.0f,1.0f);
+    s2.pos = glm::vec3(-1.0f,-1.0f,0.0f);
+    s2.uv = glm::vec2(0.0f,0.0f);
+    s3.pos = glm::vec3(1.0f,-1.0f,0.0f);
+    s3.uv = glm::vec2(1.0f,0.0f);
+    s4.pos = glm::vec3(-1.0f,1.0f,0.0f);
+    s4.uv = glm::vec2(0.0f,1.0f);
+    s5.pos = glm::vec3(1.0f,1.0f,0.0f);
+    s5.uv = glm::vec2(1.0f,1.0f);
+    s6.pos = glm::vec3(1.0f,-1.0f,0.0f);
+    s6.uv = glm::vec2(1.0f,1.0f);
+
+    screenQuadVerts[0] = s1;
+    screenQuadVerts[1] = s2;
+    screenQuadVerts[2] = s3;
+    screenQuadVerts[3] = s4;
+    screenQuadVerts[4] = s5;
+    screenQuadVerts[5] = s6;
+    screenQuad = new VertexBuffer();
+    screenQuad->bind();
+    screenQuad->upload(screenQuadVerts);
+
     //Create Sphere Model
     sphere = new Model();
-    //sphere->load("Resources/sphere.obj");
     sphere = Model::createSphere(1.0,16,16);
 
     sphere->bind();
@@ -194,11 +220,13 @@ void GLCanvas::paintGL()
 void GLCanvas::renderParticles()
 {
     sphere->bind();
-    particles->bind();
+    Vertex::setVertexAttribs();
     Vertex::enableVertexAttribs();
-    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
+
+    particles->bind();
+    glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
     glEnableVertexAttribArray(2);
-    glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
+    glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(3);
 
     glVertexAttribDivisor(0,0);
@@ -224,18 +252,20 @@ void GLCanvas::renderParticles()
 
 void GLCanvas::renderSurface()
 {
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    particles->bind();
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(2,0);
     glVertexAttribDivisor(3,0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
-    particles->bind();
     glDisableVertexAttribArray(0);
     glDisableVertexAttribArray(1);
-    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
+    glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
     glEnableVertexAttribArray(3);
+    glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
+    glEnableVertexAttribArray(4);
     glPointSize(particleSize);
 
     FrameBufferObject fbo;
@@ -249,7 +279,7 @@ void GLCanvas::renderSurface()
     {
         std::cout<<"FBO incomplete"<<std::endl;
     }
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glClear(GL_DEPTH_BUFFER_BIT);
     depthProgram->bind();
     view = camera.getView();
     glm::mat4 modelView = view*model;
@@ -263,6 +293,22 @@ void GLCanvas::renderSurface()
     depthProgram->uploadLight("light0",light,view);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
     fbo.unbind();
+
+    //Qt5 Hack to restore framebuffer
+    QOpenGLFramebufferObject::bindDefault();
+
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+    screenQuad->bind();
+    Vertex::setVertexAttribs();
+    Vertex::enableVertexAttribs();
+    glDisableVertexAttribArray(3);
+    glDisableVertexAttribArray(4);
+    Vertex::enableVertexAttribs();
+    smoothProgram->bind();
+    smoothProgram->uploadUnsignedInt("depthMap",10);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glDrawArrays(GL_TRIANGLES,0,6);
 }
 
 void GLCanvas::resizeGL(int w, int h)
