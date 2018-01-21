@@ -46,14 +46,19 @@ protected slots:
     void setGradKernel(int index);
     void setViscKernel(int index);
     void setGPU(int state);
+    void setSurface(int state);
 
     void simulate();
 private:
+    void renderParticles();
+    void renderSurface();
+
     unsigned int screenshotNo;
     bool step;
     bool running;
     bool record;
     bool gpu;
+    bool surface;
     QTimer simulationTimer;
     QTimer updateTimer;
     QPoint mouseCoords;
@@ -65,7 +70,8 @@ private:
 
     QSurfaceFormat format;
     Camera camera;
-    ShaderProgram* program;
+    ShaderProgram* particleProgram;
+    ShaderProgram* surfaceProgram;
     ParticleBuffer* particles;
     unsigned int vao;
 

@@ -1,6 +1,7 @@
 #ifndef __FRAMEBUFFEROBJECT_H
 #define __FRAMEBUFFEROBJECT_H
 #include"../Texture/Texture.h"
+#include<vector>
 
 class FrameBufferObject
 {
@@ -10,6 +11,8 @@ public:
     void bind();
     void unbind();
     void resize(unsigned int w,unsigned int h);
+
+    void setRenderBuffer(const std::vector<unsigned int>& buffers);
 
     void attachColorImage(const Texture& image, unsigned int attNo);
     void attachDepthImage(const Texture& image);

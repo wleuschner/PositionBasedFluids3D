@@ -24,6 +24,7 @@ MainWindow::MainWindow()
     connect(ui.spinBoxCorrDist,SIGNAL(valueChanged(double)),ui.widget,SLOT(setCorrDist(double)));
     connect(ui.spinBoxCorrExp,SIGNAL(valueChanged(double)),ui.widget,SLOT(setCorrExp(double)));
     connect(ui.checkBoxGPU,SIGNAL(stateChanged(int)),ui.widget,SLOT(setGPU(int)));
+    connect(ui.checkBoxSurface,SIGNAL(stateChanged(int)),ui.widget,SLOT(setSurface(int)));
 }
 
 void MainWindow::loadParameters()

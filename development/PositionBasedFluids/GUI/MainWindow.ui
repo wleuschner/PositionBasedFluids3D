@@ -397,11 +397,22 @@
        </layout>
       </item>
       <item>
-       <widget class="QCheckBox" name="checkBoxGPU">
-        <property name="text">
-         <string>GPU</string>
-        </property>
-       </widget>
+       <layout class="QHBoxLayout" name="horizontalLayout_16">
+        <item>
+         <widget class="QCheckBox" name="checkBoxGPU">
+          <property name="text">
+           <string>GPU</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="checkBoxSurface">
+          <property name="text">
+           <string>Surface</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </item>

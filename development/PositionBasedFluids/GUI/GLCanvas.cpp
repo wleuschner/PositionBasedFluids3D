@@ -15,6 +15,7 @@
 
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
+    surface = false;
     particleSize = 0.005;
     screenshotNo = 0;
     running = false;
@@ -86,27 +87,50 @@ void GLCanvas::initializeGL()
     glEnable(GL_CULL_FACE);
     //glDisable(GL_CULL_FACE);
 
+    glEnable(GL_PROGRAM_POINT_SIZE);
 
-    Shader vert(GL_VERTEX_SHADER,"Resources/Effects/Particles/particles.vert");
-    if(!vert.compile())
+    //Load Surface Shaders
+    Shader surfaceVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/surface.vert");
+    if(!surfaceVert.compile())
     {
-        std::cout<<vert.compileLog().c_str()<<std::endl;
+        std::cout<<surfaceVert.compileLog().c_str()<<std::endl;
     }
 
-    Shader frag(GL_FRAGMENT_SHADER,"Resources/Effects/Particles/particles.frag");
-    if(!frag.compile())
+    Shader surfaceFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Surface/surface.frag");
+    if(!surfaceFrag.compile())
     {
-        std::cout<<frag.compileLog().c_str()<<std::endl;
+        std::cout<<surfaceFrag.compileLog().c_str()<<std::endl;
     }
 
-    program = new ShaderProgram();
-    program->attachShader(vert);
-    program->attachShader(frag);
-    if(!program->link())
+    surfaceProgram = new ShaderProgram();
+    surfaceProgram->attachShader(surfaceVert);
+    surfaceProgram->attachShader(surfaceFrag);
+    if(!surfaceProgram->link())
     {
-        std::cout<<program->linkLog().c_str()<<std::endl;
+        std::cout<<surfaceProgram->linkLog().c_str()<<std::endl;
     }
-    program->bind();
+    surfaceProgram->bind();
+    //Load Particle Shaders
+    Shader particleVert(GL_VERTEX_SHADER,"Resources/Effects/Particles/particles.vert");
+    if(!particleVert.compile())
+    {
+        std::cout<<particleVert.compileLog().c_str()<<std::endl;
+    }
+
+    Shader particleFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Particles/particles.frag");
+    if(!particleFrag.compile())
+    {
+        std::cout<<particleFrag.compileLog().c_str()<<std::endl;
+    }
+
+    particleProgram = new ShaderProgram();
+    particleProgram->attachShader(particleVert);
+    particleProgram->attachShader(particleFrag);
+    if(!particleProgram->link())
+    {
+        std::cout<<particleProgram->linkLog().c_str()<<std::endl;
+    }
+    particleProgram->bind();
 
     //Create Light
     light = Light(glm::vec3(-10.0,10.0,5.0));
@@ -130,11 +154,23 @@ void GLCanvas::initializeGL()
     pbfGpu = new PBFSolverGPU(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
     solver = (AbstractSolver*)pbf;
     //particles->addParticle(Particle(0,glm::vec3(0.0,0.0,0.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
-
 }
 
 void GLCanvas::paintGL()
 {
+    if(surface)
+    {
+        renderSurface();
+    }
+    else
+    {
+        renderParticles();
+    }
+}
+
+void GLCanvas::renderParticles()
+{
+    sphere->bind();
     particles->bind();
     Vertex::enableVertexAttribs();
     glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
@@ -148,19 +184,50 @@ void GLCanvas::paintGL()
     glVertexAttribDivisor(3,1);
 
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    program->bind();
+    particleProgram->bind();
     view = camera.getView();
     glm::mat4 modelView = view*model;
     glm::mat4 pvm = projection*modelView;
     glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
-    program->uploadScalar("particleSize",particleSize);
-    program->uploadMat4("modelView",modelView);
-    program->uploadMat4("pvm",pvm);
-    program->uploadMat4("view",view);
-    program->uploadMat3("normalMatrix",normalMatrix);
-    program->uploadVec3("cPos",camera.getPosition());
-    program->uploadLight("light0",light,view);
+    particleProgram->uploadScalar("particleSize",particleSize);
+    particleProgram->uploadMat4("modelView",modelView);
+    particleProgram->uploadMat4("pvm",pvm);
+    particleProgram->uploadMat4("view",view);
+    particleProgram->uploadMat3("normalMatrix",normalMatrix);
+    particleProgram->uploadVec3("cPos",camera.getPosition());
+    particleProgram->uploadLight("light0",light,view);
     glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
+}
+
+void GLCanvas::renderSurface()
+{
+    glVertexAttribDivisor(0,0);
+    glVertexAttribDivisor(1,0);
+    glVertexAttribDivisor(2,0);
+    glVertexAttribDivisor(3,0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+    particles->bind();
+    glDisableVertexAttribArray(0);
+    glDisableVertexAttribArray(1);
+    glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
+    glEnableVertexAttribArray(3);
+
+    glPointSize(particleSize);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    surfaceProgram->bind();
+    view = camera.getView();
+    glm::mat4 modelView = view*model;
+    glm::mat4 pvm = projection*modelView;
+    glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
+    surfaceProgram->uploadScalar("particleSize",particleSize);
+    surfaceProgram->uploadMat4("modelView",modelView);
+    surfaceProgram->uploadMat4("pvm",pvm);
+    surfaceProgram->uploadMat4("view",view);
+    surfaceProgram->uploadMat3("normalMatrix",normalMatrix);
+    surfaceProgram->uploadLight("light0",light,view);
+    glDrawArrays(GL_POINTS,0,particles->getNumParticles());
 }
 
 void GLCanvas::resizeGL(int w, int h)
@@ -408,4 +475,9 @@ void GLCanvas::setGPU(int state)
     solver->setCorrConst(corrConst);
     solver->setCorrDist(corrDist);
     solver->setCorrExp(corrExp);
+}
+
+void GLCanvas::setSurface(int state)
+{
+    this->surface = state;
 }

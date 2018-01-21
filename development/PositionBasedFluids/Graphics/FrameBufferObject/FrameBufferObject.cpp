@@ -27,6 +27,10 @@ void FrameBufferObject::resize(unsigned int w,unsigned int h)
     glFramebufferParameteri(GL_FRAMEBUFFER,GL_FRAMEBUFFER_DEFAULT_HEIGHT,h);
 }
 
+void FrameBufferObject::setRenderBuffer(const std::vector<unsigned int>& buffers)
+{
+    glDrawBuffers(buffers.size(),buffers.data());
+}
 
 void FrameBufferObject::attachColorImage(const Texture& image, unsigned int attNo)
 {
