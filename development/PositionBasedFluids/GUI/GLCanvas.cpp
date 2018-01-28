@@ -180,7 +180,7 @@ void GLCanvas::initializeGL()
     particleProgram->bind();
 
     //Create Light
-    light = Light(glm::vec3(0.0,10.0,5.0));
+    light = Light(glm::vec3(0.0,20.0,0.0));
 
     //Create Screenquad
     std::vector<Vertex> screenQuadVerts(6);
@@ -319,24 +319,39 @@ void GLCanvas::renderSurface()
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
     //glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
     fbo.unbind();
-
-    FrameBufferObject fbo2;
-    Texture smoothDepthImage;
-    smoothDepthImage.bind(1);
-    smoothDepthImage.createDepthImage(this->width(),this->height());
+/*
     fbo2.attachDepthImage(smoothDepthImage);
     fbo2.setRenderBuffer({GL_NONE});
-    fbo2.bind();
+    fbo2.bind();*/
+    Texture smoothDepthImage;
     smoothProgram->bind();
-    for(unsigned i=0;i<11;i++)
+    for(unsigned i=0;i<51;i++)
     {
-        depthImage.bind(i%2);
-        smoothDepthImage.bind(1+i%2);
+        FrameBufferObject fbo2;
+        smoothDepthImage.bind(1);
+        smoothDepthImage.createDepthImage(this->width(),this->height());
+
+        if(i%2==1)
+        {
+            smoothDepthImage.bind(1);
+            depthImage.bind(0);
+            fbo2.attachDepthImage(smoothDepthImage);
+            fbo2.setRenderBuffer({GL_NONE});
+        }
+        else
+        {
+            smoothDepthImage.bind(0);
+            depthImage.bind(1);
+            fbo2.attachDepthImage(depthImage);
+            fbo2.setRenderBuffer({GL_NONE});
+        }
+        fbo2.bind();
         smoothProgram->uploadUnsignedInt("depthMap",0);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         glDrawArrays(GL_TRIANGLES,0,6);
+        fbo2.unbind();
     }
-    fbo2.unbind();
+
 
     //Qt5 Hack to restore framebuffer
     QOpenGLFramebufferObject::bindDefault();
@@ -350,14 +365,15 @@ void GLCanvas::renderSurface()
     glDisableVertexAttribArray(4);
     Vertex::enableVertexAttribs();
     depthImage.bind(0);
-    smoothDepthImage.bind(1);
+    //smoothDepthImage.bind(0);
     surfaceProgram->bind();
     surfaceProgram->uploadScalar("vpWidth",this->width());
     surfaceProgram->uploadScalar("vpHeight",this->height());
     surfaceProgram->uploadVec3("cPos",camera.getPosition());
     surfaceProgram->uploadScalar("fx",projection[0][0]);
     surfaceProgram->uploadScalar("fy",projection[1][1]);
-    surfaceProgram->uploadUnsignedInt("depthMap",1);
+    surfaceProgram->uploadUnsignedInt("depthMap",0);
+    surfaceProgram->uploadLight("light0",light,view);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLES,0,6);
 }
@@ -365,7 +381,7 @@ void GLCanvas::renderSurface()
 void GLCanvas::resizeGL(int w, int h)
 {
     glViewport(0,0,w,h);
-    projection = glm::perspectiveFov(45.0f,(float)w,(float)h,0.1f,100.0f);
+    projection = glm::perspectiveFov(45.0f,(float)w,(float)h,0.1f,10.0f);
 }
 
 void GLCanvas::mousePressEvent(QMouseEvent *event)
