@@ -134,6 +134,28 @@ void GLCanvas::initializeGL()
     }
     smoothProgram->bind();
 
+    //Load Surface Shader
+    Shader surfaceVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/surface.vert");
+    if(!surfaceVert.compile())
+    {
+        std::cout<<surfaceVert.compileLog().c_str()<<std::endl;
+    }
+
+    Shader surfaceFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Surface/surface.frag");
+    if(!surfaceFrag.compile())
+    {
+        std::cout<<surfaceFrag.compileLog().c_str()<<std::endl;
+    }
+
+    surfaceProgram = new ShaderProgram();
+    surfaceProgram->attachShader(surfaceVert);
+    surfaceProgram->attachShader(surfaceFrag);
+    if(!surfaceProgram->link())
+    {
+        std::cout<<surfaceProgram->linkLog().c_str()<<std::endl;
+    }
+    surfaceProgram->bind();
+
     //Load Particle Shaders
     Shader particleVert(GL_VERTEX_SHADER,"Resources/Effects/Particles/particles.vert");
     if(!particleVert.compile())
@@ -225,14 +247,14 @@ void GLCanvas::renderParticles()
 
     particles->bind();
     glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
-    glEnableVertexAttribArray(2);
-    glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(3);
+    glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
+    glEnableVertexAttribArray(4);
 
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
-    glVertexAttribDivisor(2,1);
     glVertexAttribDivisor(3,1);
+    glVertexAttribDivisor(4,1);
 
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     particleProgram->bind();
@@ -255,18 +277,19 @@ void GLCanvas::renderSurface()
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
     glBindBuffer(GL_ARRAY_BUFFER,0);
+    //sphere->bind();
+    //Vertex::setVertexAttribs();
+    //Vertex::enableVertexAttribs();
+
     particles->bind();
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
-    glVertexAttribDivisor(2,0);
     glVertexAttribDivisor(3,0);
-    glDisableVertexAttribArray(0);
-    glDisableVertexAttribArray(1);
+    glVertexAttribDivisor(4,0);
     glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(4);
-    glPointSize(particleSize);
 
     FrameBufferObject fbo;
     Texture depthImage;
@@ -279,7 +302,6 @@ void GLCanvas::renderSurface()
     {
         std::cout<<"FBO incomplete"<<std::endl;
     }
-    glClear(GL_DEPTH_BUFFER_BIT);
     depthProgram->bind();
     view = camera.getView();
     glm::mat4 modelView = view*model;
@@ -287,11 +309,14 @@ void GLCanvas::renderSurface()
     glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
     depthProgram->uploadScalar("particleSize",particleSize);
     depthProgram->uploadMat4("modelView",modelView);
+    depthProgram->uploadMat4("projection",projection);
     depthProgram->uploadMat4("pvm",pvm);
     depthProgram->uploadMat4("view",view);
     depthProgram->uploadMat3("normalMatrix",normalMatrix);
     depthProgram->uploadLight("light0",light,view);
+    glClear(GL_DEPTH_BUFFER_BIT);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
+    //glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
     fbo.unbind();
 
     //Qt5 Hack to restore framebuffer
@@ -305,8 +330,12 @@ void GLCanvas::renderSurface()
     glDisableVertexAttribArray(3);
     glDisableVertexAttribArray(4);
     Vertex::enableVertexAttribs();
-    smoothProgram->bind();
-    smoothProgram->uploadUnsignedInt("depthMap",10);
+    surfaceProgram->bind();
+    surfaceProgram->uploadScalar("vpWidth",this->width());
+    surfaceProgram->uploadScalar("vpHeight",this->height());
+    surfaceProgram->uploadScalar("fx",projection[0][0]);
+    surfaceProgram->uploadScalar("fy",projection[1][1]);
+    surfaceProgram->uploadUnsignedInt("depthMap",0);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLES,0,6);
 }

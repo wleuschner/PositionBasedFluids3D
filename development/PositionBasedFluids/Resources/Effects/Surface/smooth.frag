@@ -10,7 +10,9 @@ struct LightSource
 };
 
 uniform float smoothTimestep;
-layout(location=10) uniform sampler2D depthMap;
+uniform float vpWidth;
+uniform float vpHeight;
+uniform sampler2D depthMap;
 
 uniform mat4 view;
 uniform LightSource light;
@@ -31,6 +33,6 @@ void main()
     float dy2;
     float d;
 
-    float cz=(2.0 * 0.1) / (100.0 + 0.1 - z * (100.0 - 0.1));
+    float cz=(2.0 * 0.1) / (10.0 + 0.1 - z * (10.0 - 0.1));
     fragColor = vec4(cz,cz,cz,1.0);
 }
