@@ -11,6 +11,7 @@ public:
     void bind(unsigned int texUnit);
     void upload(unsigned int w,unsigned int h,void* data);
     void createDepthImage(unsigned int w,unsigned int h);
+    void destroy();
 
 private:
     unsigned int id;

@@ -8,7 +8,7 @@ Texture::Texture()
 
 Texture::~Texture()
 {
-    glDeleteTextures(1,&id);
+    destroy();
 }
 
 void Texture::bind(unsigned int texUnit)
@@ -39,4 +39,9 @@ void Texture::createDepthImage(unsigned int w,unsigned int h)
     glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
     //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
+}
+
+void Texture::destroy()
+{
+    glDeleteTextures(1,&id);
 }

@@ -9,6 +9,7 @@ struct LightSource
     vec3 spec;
 };
 
+uniform vec3 cPos;
 uniform float vpWidth;
 uniform float vpHeight;
 uniform sampler2D depthMap;
@@ -18,6 +19,7 @@ uniform mat4 modelView;
 uniform float fx;
 uniform float fy;
 uniform LightSource light;
+uniform vec4 eye;
 
 in vec2 fragTexCoord;
 out vec4 fragColor;
@@ -56,12 +58,22 @@ void main()
         ddy = ddy2;
     }
 
-    vec3 N = -cross(ddx,ddy);
+    vec3 N = cross(ddx,ddy);
     N = normalize(N);
 
-    float diff = max(0.0,dot(N,vec3(vec4(0.0,0.0,1.0,1.0))));
+    vec3 V = normalize(eyePos-cPos);
+    vec3 L = normalize(eyePos-cPos-light.pos);
+    float R0 = (1.0-1.33)/(1.0+1.33);
+    float RTheta = R0+(1-R0)*pow((1-dot(N,V)),5);
     float z = texture(depthMap,fragTexCoord).x;
     float cz = (2.0 * 0.1) / (10.0 + 0.1 - z * (10.0 - 0.1));
     //fragColor = vec4(cz,cz,cz,1.0);
-    fragColor = vec4(diff*vec3(0.0,0.0,1.0),1.0);
+
+    vec3 H = normalize(V+L);
+    float spec = max(pow(dot(N,H),20),0.0);
+    float diff = dot(N,eyePos-light.pos);
+    //fragColor = vec4(0.0,0.0,0.5,1.0)*diff+vec4(0.0,0.0,0.0,0.0)/*+vec4(0.7,0.7,0.7,0.0)*spec*/;
+    fragColor = clamp(vec4(RTheta*vec3(0.0,0.0,0.5)+(1.0-RTheta)*vec3(0.0,0.0,0.7)+vec3(1.0,1.0,1.0)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));
+    //fragColor = clamp(,vec4(1.0,1.0,1.0,1.0));
+
 }

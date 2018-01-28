@@ -59,6 +59,7 @@ private:
     bool record;
     bool gpu;
     bool surface;
+    unsigned int smoothIter;
     QTimer simulationTimer;
     QTimer updateTimer;
     QPoint mouseCoords;
