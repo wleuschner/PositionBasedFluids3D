@@ -85,7 +85,7 @@ void main()
     //fragColor = vec4(d,d,d,1.0);
 
     //fragColor = vec4(texture(thicknessMap,fragTexCoord).xyz,1.0);
-    vec3 c_fluid = mix(vec3(0.0,0.0,0.0),vec3(0.0,0.0,1.0),exp(1.0*-d));
+    vec3 c_fluid = mix(vec3(0.0,0.0,1.0),vec3(0.0,0.0,0.0),exp(0.9*-d));
     //fragColor = vec4(0.0,0.0,0.5,1.0)*diff+vec4(0.0,0.0,0.0,0.0)/*+vec4(0.7,0.7,0.7,0.0)*spec*/;
     fragColor = clamp(vec4(RTheta*vec3(0.0,0.0,0.7)+(1.0-RTheta)*c_fluid+vec3(0.7,0.7,0.7)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));
     //fragColor = clamp(,vec4(1.0,1.0,1.0,1.0));

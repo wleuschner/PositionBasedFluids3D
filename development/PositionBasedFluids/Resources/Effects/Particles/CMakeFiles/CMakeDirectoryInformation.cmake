@@ -3,7 +3,7 @@
 
 # Relative path conversion top directories.
 set(CMAKE_RELATIVE_PATH_TOP_SOURCE "/media/Daten/Dokumente/TU Berlin/CG Seminar C/cgs-ws17-positionbasedfluids/development/PositionBasedFluids")
-set(CMAKE_RELATIVE_PATH_TOP_BINARY "/media/Daten/Dokumente/TU Berlin/CG Seminar C/cgs-ws17-positionbasedfluids/development/build-PositionBasedFluids-Desktop-Debug")
+set(CMAKE_RELATIVE_PATH_TOP_BINARY "/media/Daten/Dokumente/TU Berlin/CG Seminar C/cgs-ws17-positionbasedfluids/development/build-PositionBasedFluids-Desktop-Release")
 
 # Force unix paths in dependencies.
 set(CMAKE_FORCE_UNIX_PATHS 1)
