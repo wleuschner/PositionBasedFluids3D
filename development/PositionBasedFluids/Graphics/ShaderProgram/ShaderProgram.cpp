@@ -62,6 +62,12 @@ void ShaderProgram::enableAttribute(const std::string& name)
     glEnableVertexAttribArray(glGetAttribLocation(id,name.c_str()));
 }
 
+void ShaderProgram::uploadInt(const std::string &var, unsigned int val)
+{
+    unsigned int loc = glGetUniformLocation(id,var.c_str());
+    glUniform1i(loc,val);
+}
+
 void ShaderProgram::uploadUnsignedInt(const std::string &var, unsigned int val)
 {
     unsigned int loc = glGetUniformLocation(id,var.c_str());

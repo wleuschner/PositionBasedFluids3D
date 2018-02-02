@@ -135,6 +135,28 @@ void GLCanvas::initializeGL()
     }
     smoothProgram->bind();
 
+    //Load Thickness Shader
+    Shader thicknessVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/thickness.vert");
+    if(!thicknessVert.compile())
+    {
+        std::cout<<thicknessVert.compileLog().c_str()<<std::endl;
+    }
+
+    Shader thicknessFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Surface/thickness.frag");
+    if(!thicknessFrag.compile())
+    {
+        std::cout<<thicknessFrag.compileLog().c_str()<<std::endl;
+    }
+
+    thicknessProgram = new ShaderProgram();
+    thicknessProgram->attachShader(thicknessVert);
+    thicknessProgram->attachShader(thicknessFrag);
+    if(!thicknessProgram->link())
+    {
+        std::cout<<thicknessProgram->linkLog().c_str()<<std::endl;
+    }
+    thicknessProgram->bind();
+
     //Load Surface Shader
     Shader surfaceVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/surface.vert");
     if(!surfaceVert.compile())
@@ -292,6 +314,10 @@ void GLCanvas::renderSurface()
     glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(4);
 
+    view = camera.getView();
+    glm::mat4 modelView = view*model;
+    glm::mat4 pvm = projection*modelView;
+    glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
     FrameBufferObject fbo;
     Texture depthImage;
     depthImage.bind(0);
@@ -304,10 +330,6 @@ void GLCanvas::renderSurface()
         std::cout<<"FBO incomplete"<<std::endl;
     }
     depthProgram->bind();
-    view = camera.getView();
-    glm::mat4 modelView = view*model;
-    glm::mat4 pvm = projection*modelView;
-    glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
     depthProgram->uploadScalar("particleSize",particleSize);
     depthProgram->uploadMat4("modelView",modelView);
     depthProgram->uploadMat4("projection",projection);
@@ -323,13 +345,16 @@ void GLCanvas::renderSurface()
     fbo2.attachDepthImage(smoothDepthImage);
     fbo2.setRenderBuffer({GL_NONE});
     fbo2.bind();*/
+
+    //Smooth Depthimage
+
     Texture smoothDepthImage;
+    smoothDepthImage.bind(1);
+    smoothDepthImage.createDepthImage(this->width(),this->height());
     smoothProgram->bind();
-    for(unsigned i=0;i<51;i++)
+    for(unsigned i=0;i<61;i++)
     {
         FrameBufferObject fbo2;
-        smoothDepthImage.bind(1);
-        smoothDepthImage.createDepthImage(this->width(),this->height());
 
         if(i%2==1)
         {
@@ -352,6 +377,39 @@ void GLCanvas::renderSurface()
         fbo2.unbind();
     }
 
+    //Calculate Thickness
+    Texture thicknessImage;
+    Texture thicknessDepthImage;
+    thicknessImage.bind(0);
+    thicknessImage.createRenderImage(this->width(),this->height());
+    thicknessDepthImage.bind(3);
+    thicknessDepthImage.createDepthImage(this->width(),this->height());
+    FrameBufferObject fbo3;
+    fbo3.bind();
+    fbo3.attachColorImage(thicknessImage,0);
+    fbo3.attachDepthImage(thicknessDepthImage);
+    fbo3.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+    if(!fbo3.isComplete())
+    {
+        std::cout<<"FBO incomplete"<<std::endl;
+    }
+    thicknessProgram->bind();
+    thicknessProgram->uploadScalar("particleSize",particleSize);
+    thicknessProgram->uploadMat4("modelView",modelView);
+    thicknessProgram->uploadMat4("projection",projection);
+    thicknessProgram->uploadMat4("pvm",pvm);
+    thicknessProgram->uploadMat4("view",view);
+    thicknessProgram->uploadMat3("normalMatrix",normalMatrix);
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_ONE,GL_ONE);
+
+    glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+    glDrawArrays(GL_POINTS,0,particles->getNumParticles());
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    glFinish();
 
     //Qt5 Hack to restore framebuffer
     QOpenGLFramebufferObject::bindDefault();
@@ -364,7 +422,7 @@ void GLCanvas::renderSurface()
     glDisableVertexAttribArray(3);
     glDisableVertexAttribArray(4);
     Vertex::enableVertexAttribs();
-    depthImage.bind(0);
+    //depthImage.bind(0);
     //smoothDepthImage.bind(0);
     surfaceProgram->bind();
     surfaceProgram->uploadScalar("vpWidth",this->width());
@@ -372,8 +430,12 @@ void GLCanvas::renderSurface()
     surfaceProgram->uploadVec3("cPos",camera.getPosition());
     surfaceProgram->uploadScalar("fx",projection[0][0]);
     surfaceProgram->uploadScalar("fy",projection[1][1]);
-    surfaceProgram->uploadUnsignedInt("depthMap",0);
+    surfaceProgram->uploadInt("depthMap",0);
+    surfaceProgram->uploadInt("thicknessMap",1);
     surfaceProgram->uploadLight("light0",light,view);
+    depthImage.bind(0);
+    thicknessImage.bind(1);
+
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLES,0,6);
 }

@@ -23,6 +23,7 @@ public:
     void enableAttribute(const std::string& name);
 
     //Uniform Access
+    void uploadInt(const std::string &var, unsigned int val);
     void uploadUnsignedInt(const std::string& var,unsigned int val);
     void uploadScalar(const std::string& var,float val);
     void uploadVec2(const std::string& var,glm::vec2 val);

@@ -74,6 +74,7 @@ private:
     ShaderProgram* particleProgram;
     ShaderProgram* depthProgram;
     ShaderProgram* smoothProgram;
+    ShaderProgram* thicknessProgram;
     ShaderProgram* surfaceProgram;
     ParticleBuffer* particles;
     unsigned int vao;

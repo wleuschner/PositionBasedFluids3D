@@ -1,11 +1,21 @@
 #version 330
+
+struct LightSource
+{
+    vec3 pos;
+    vec3 ldir;
+    vec3 amb;
+    vec3 dif;
+    vec3 spec;
+};
+
 in vec3 eyeSpacePos;
 out vec4 fragColor;
 
 uniform float particleSize;
 uniform mat4 modelView;
 uniform mat4 projection;
-
+uniform LightSource light;
 
 void main()
 {
@@ -20,5 +30,7 @@ void main()
     vec4 fragPos = vec4(eyeSpacePos+N*particleSize,1.0);
     vec4 clipPos = projection*fragPos;
     gl_FragDepth = clipPos.z/clipPos.w;
+    //fragColor = vec4(0.0,1.0,0.0,1.0);
+    fragColor = vec4(particleSize,particleSize,particleSize,1.0);
 
 }

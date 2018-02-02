@@ -13,6 +13,7 @@ uniform vec3 cPos;
 uniform float vpWidth;
 uniform float vpHeight;
 uniform sampler2D depthMap;
+uniform sampler2D thicknessMap;
 
 uniform mat4 view;
 uniform mat4 modelView;
@@ -39,11 +40,14 @@ void main()
     float dyTex = 1.0f/textureSize(depthMap,0).y;
 
     float depth = texture(depthMap,fragTexCoord).x;
+    //float depth2 = texture(thicknessMap,fragTexCoord).x;
     if(depth>=1.0)
     {
         discard;
     }
     vec3 eyePos = getEyePos(fragTexCoord,depth);
+    //vec3 eyePos2 = getEyePos(fragTexCoord,depth2);
+
     vec3 ddx = getEyePos(fragTexCoord+vec2(dxTex,0.0),texture(depthMap,fragTexCoord+vec2(dxTex,0.0)).x)-eyePos;
     vec3 ddx2 = eyePos-getEyePos(fragTexCoord+vec2(-dxTex,0.0),texture(depthMap,fragTexCoord+vec2(-dxTex,0.0)).x);
     if(abs(ddx.z)<abs(ddx2.z))
@@ -57,9 +61,11 @@ void main()
     {
         ddy = ddy2;
     }
-
     vec3 N = cross(ddx,ddy);
     N = normalize(N);
+
+    //Compute Thickness
+    float d = texture(thicknessMap,fragTexCoord).x;
 
     vec3 V = normalize(eyePos-vec3(modelView*vec4(cPos,1.0)));
     vec3 L = normalize(eyePos-light.pos);
@@ -67,7 +73,7 @@ void main()
     float RTheta = R0+(1.0-R0)*pow((1.0-dot(N,V)),5);
     float z = texture(depthMap,fragTexCoord).x;
     float cz = (2.0 * 0.1) / (10.0 + 0.1 - z * (10.0 - 0.1));
-    //fragColor = vec4(1.0-cz,1.0-cz,1.0-cz,1.0);
+    //fragColor = vec4(cz,cz,cz,1.0);
 
     vec3 H = normalize(V+L);
     float diff = max(dot(N,L), 0.0);
@@ -76,8 +82,12 @@ void main()
     {
         spec = max(pow(dot(N,H),20.0),0.0);
     }
+    //fragColor = vec4(d,d,d,1.0);
+
+    //fragColor = vec4(texture(thicknessMap,fragTexCoord).xyz,1.0);
+    vec3 c_fluid = mix(vec3(0.0,0.0,0.0),vec3(0.0,0.0,1.0),exp(1.0*-d));
     //fragColor = vec4(0.0,0.0,0.5,1.0)*diff+vec4(0.0,0.0,0.0,0.0)/*+vec4(0.7,0.7,0.7,0.0)*spec*/;
-    fragColor = clamp(vec4(RTheta*vec3(0.0,0.0,0.5)+(1.0-RTheta)*vec3(0.0,0.0,0.7)+vec3(0.7,0.7,0.7)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));
+    fragColor = clamp(vec4(RTheta*vec3(0.0,0.0,0.7)+(1.0-RTheta)*c_fluid+vec3(0.7,0.7,0.7)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));
     //fragColor = clamp(,vec4(1.0,1.0,1.0,1.0));
 
 }

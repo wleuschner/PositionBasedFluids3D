@@ -10,11 +10,13 @@ public:
 
     void bind(unsigned int texUnit);
     void upload(unsigned int w,unsigned int h,void* data);
+    void createRenderImage(unsigned int w,unsigned int h);
     void createDepthImage(unsigned int w,unsigned int h);
     void destroy();
 
 private:
     unsigned int id;
+    unsigned int sampler;
     unsigned int width;
     unsigned int height;
 };

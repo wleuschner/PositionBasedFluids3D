@@ -4,6 +4,7 @@
 Texture::Texture()
 {
     glGenTextures(1,&id);
+    glGenSamplers(1,&sampler);
 }
 
 Texture::~Texture()
@@ -15,6 +16,7 @@ void Texture::bind(unsigned int texUnit)
 {
     glActiveTexture(GL_TEXTURE0+texUnit);
     glBindTexture(GL_TEXTURE_2D,id);
+    glBindSampler(texUnit,sampler);
 }
 
 void Texture::upload(unsigned int w,unsigned int h,void* data)
@@ -23,10 +25,20 @@ void Texture::upload(unsigned int w,unsigned int h,void* data)
     this->height = h;
 
     glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w,h,0,GL_RGBA,GL_UNSIGNED_BYTE,data);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glSamplerParameteri(sampler,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glSamplerParameteri(sampler,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
     //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
+}
+
+void Texture::createRenderImage(unsigned int w,unsigned int h)
+{
+    this->width = w;
+    this->height = h;
+
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w,h,0,GL_RGBA,GL_FLOAT,0);
+    glSamplerParameteri(sampler,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glSamplerParameteri(sampler,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
 }
 
 void Texture::createDepthImage(unsigned int w,unsigned int h)
@@ -35,13 +47,14 @@ void Texture::createDepthImage(unsigned int w,unsigned int h)
     this->height = h;
 
     glTexImage2D(GL_TEXTURE_2D,0,GL_DEPTH_COMPONENT,w,h,0,GL_DEPTH_COMPONENT,GL_FLOAT,0);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
+    glSamplerParameteri(sampler,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
+    glSamplerParameteri(sampler,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S,GL_CLAMP);
     //glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_CLAMP);
 }
 
 void Texture::destroy()
 {
+    glDeleteSamplers(1,&sampler);
     glDeleteTextures(1,&id);
 }
