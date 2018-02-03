@@ -504,45 +504,92 @@ void GLCanvas::renderSurface()
     //Smooth Depthimage
     Texture smoothDepthImage;
     smoothDepthImage.bind(0);
-    smoothDepthImage.createDepthImage(this->width(),this->height());
+    smoothDepthImage.createFloatRenderImage(this->width(),this->height());
+    FrameBufferObject fbo2;
+    glVertexAttribDivisor(0,0);
+    glVertexAttribDivisor(1,0);
+    glVertexAttribDivisor(3,0);
+    glVertexAttribDivisor(4,0);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glDisableVertexAttribArray(3);
+    glDisableVertexAttribArray(4);
     smoothProgram->bind();
-    /*
-    for(unsigned i=0;i<0;i++)
     {
-        FrameBufferObject fbo2;
+        Texture tempImage;
+        tempImage.bind(0);
+        tempImage.createFloatRenderImage(this->width(),this->height());
+        smoothProgram->uploadInt("depthMap",0);
+        fbo2.bind();
+        depthImage.bind(0);
+        fbo2.attachColorImage(tempImage,0);
+        fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+        if(!fbo2.isComplete())
+        {
+            std::cout<<"FBO incomplete"<<std::endl;
+        }
+
+        //Blur Horizontally
+        smoothProgram->uploadVec2("blurDir",glm::vec2(1.0,0.0));
+        glClear(GL_COLOR_BUFFER_BIT);
+        screenQuad->bind();
+        glDrawArrays(GL_TRIANGLES,0,6);
+
+        //Blur Vertically
+        smoothProgram->uploadInt("depthMap",0);
+        fbo2.bind();
+        tempImage.bind(0);
+        fbo2.attachColorImage(smoothDepthImage,0);
+        fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+        if(!fbo2.isComplete())
+        {
+            std::cout<<"FBO incomplete"<<std::endl;
+        }
+        smoothProgram->uploadVec2("blurDir",glm::vec2(0.0,1.0));
+        glClear(GL_COLOR_BUFFER_BIT);
+        screenQuad->bind();
+        glDrawArrays(GL_TRIANGLES,0,6);
+    }
+    for(unsigned i=1;i<11;i++)
+    {
+        Texture tempImage;
+        tempImage.bind(0);
+        tempImage.createFloatRenderImage(this->width(),this->height());
         smoothProgram->uploadInt("depthMap",0);
 
-        if(i%2==0)
-        {
-            smoothDepthImage.bind(1);
-            depthImage.bind(0);
-            fbo2.attachDepthImage(smoothDepthImage);
-            fbo2.setRenderBuffer({GL_NONE});
-        }
-        else
-        {
-            smoothDepthImage.bind(0);
-            depthImage.bind(1);
-            fbo2.attachDepthImage(depthImage);
-            fbo2.setRenderBuffer({GL_NONE});
-        }
         fbo2.bind();
-        glClearColor(0.0,0.0,0.0,1.0);
-        glClearDepth(1.0);
-        glClear(GL_DEPTH_BUFFER_BIT);
+        smoothDepthImage.bind(0);
+        fbo2.attachColorImage(tempImage,0);
+        fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+        if(!fbo2.isComplete())
+        {
+            std::cout<<"FBO incomplete"<<std::endl;
+        }
+
+        //Blur Horizontally
+        smoothProgram->uploadVec2("blurDir",glm::vec2(1.0,0.0));
+        glClear(GL_COLOR_BUFFER_BIT);
         screenQuad->bind();
-        glVertexAttribDivisor(0,0);
-        glVertexAttribDivisor(1,0);
-        glVertexAttribDivisor(3,0);
-        glVertexAttribDivisor(4,0);
-        glEnableVertexAttribArray(0);
-        glEnableVertexAttribArray(1);
-        glEnableVertexAttribArray(2);
-        glDisableVertexAttribArray(3);
-        glDisableVertexAttribArray(4);
         glDrawArrays(GL_TRIANGLES,0,6);
-        fbo2.unbind();
-    }*/
+
+        //Blur Vertically
+        smoothProgram->uploadInt("depthMap",0);
+        fbo2.bind();
+        tempImage.bind(0);
+        fbo2.attachColorImage(smoothDepthImage,0);
+        fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+        if(!fbo2.isComplete())
+        {
+            std::cout<<"FBO incomplete"<<std::endl;
+        }
+        smoothProgram->uploadVec2("blurDir",glm::vec2(0.0,1.0));
+        glClear(GL_COLOR_BUFFER_BIT);
+        screenQuad->bind();
+        glDrawArrays(GL_TRIANGLES,0,6);
+
+    }
+    fbo2.unbind();
 
     //Calculate Thickness
     glBindBuffer(GL_ARRAY_BUFFER,0);
@@ -550,7 +597,7 @@ void GLCanvas::renderSurface()
     Texture thicknessImage;
     Texture thicknessDepthImage;
     thicknessImage.bind(0);
-    thicknessImage.createRenderImage(this->width(),this->height());
+    thicknessImage.createFloatRenderImage(this->width(),this->height());
     thicknessDepthImage.bind(1);
     thicknessDepthImage.createDepthImage(this->width(),this->height());
     FrameBufferObject fbo3;
@@ -613,7 +660,7 @@ void GLCanvas::renderSurface()
     surfaceProgram->uploadInt("background",2);
     surfaceProgram->uploadInt("skybox",3);
     surfaceProgram->uploadLight("light0",light,view);
-    depthImage.bind(0);
+    smoothDepthImage.bind(0);
     thicknessImage.bind(1);
     bgImage.bind(2);
     skyBox->bind(3);

@@ -1,14 +1,6 @@
 #version 330
 #extension GL_ARB_shading_language_420pack : require
 #extension GL_ARB_explicit_uniform_location : require
-struct LightSource
-{
-    vec3 pos;
-    vec3 ldir;
-    vec3 amb;
-    vec3 dif;
-    vec3 spec;
-};
 
 uniform float smoothTimestep;
 uniform float vpWidth;
@@ -16,11 +8,12 @@ uniform float vpHeight;
 uniform sampler2D depthMap;
 
 uniform mat4 view;
-uniform LightSource light;
+uniform vec2 blurDir;
 
 in vec2 fragTexCoord;
-out vec4 fragColor;
+out float fragColor;
 
+/*
 float gaussianScale = 1.0;
 float gaussian[] = {0.000000,	0.000001,	0.000005,	0.000014,	0.000032,	0.000059,	0.000085,	0.000097,	0.000085,	0.000059,	0.000032,	0.000014,	0.000005,	0.000001,	0.000000,
                     0.000001,	0.000006,	0.000022,	0.000067,	0.000158,	0.000291,	0.000420,	0.000474,	0.000420,	0.000291,	0.000158,	0.000067,	0.000022,	0.000006,	0.000001,
@@ -37,7 +30,23 @@ float gaussian[] = {0.000000,	0.000001,	0.000005,	0.000014,	0.000032,	0.000059,	
                     0.000005,	0.000022,	0.000085,	0.000257,	0.000607,	0.001119,	0.001615,	0.001826,	0.001615,	0.001119,	0.000607,	0.000257,	0.000085,	0.000022,	0.000005,
                     0.000001,	0.000006,	0.000022,	0.000067,	0.000158,	0.000291,	0.000420,	0.000474,	0.000420,	0.000291,	0.000158,	0.000067,	0.000022,	0.000006,	0.000001,
                     0.000000,	0.000001,	0.000005,	0.000014,	0.000032,	0.000059,	0.000085,	0.000097,	0.000085,	0.000059,	0.000032,	0.000014,	0.000005,	0.000001,	0.000000};
+*/
+float gaussianScale = 1.0;
+float gaussian[] = {0.000489,0.002403,0.009246,0.027840,0.065602,0.120999,0.174697,0.197448,0.174697,0.120999,0.065602,0.027840,0.009246,0.002403,0.000489};
 
+/*
+float gaussianScale = 1.0;
+
+float gaussian[] = { 0.000000,	0.000001,	0.000014,	0.000055,	0.000088,	0.000055,	0.000014,	0.000001,	0.000000,
+                     0.000001,	0.000036,	0.000362,	0.001445,	0.002289,	0.001445,	0.000362,	0.000036,	0.000001,
+                     0.000014,	0.000362,	0.003672,	0.014648,	0.023205,	0.014648,	0.003672,	0.000362,	0.000014,
+                     0.000055,	0.001445,	0.014648,	0.058434,	0.092566,	0.058434,	0.014648,	0.001445,	0.000055,
+                     0.000088,	0.002289,	0.023205,	0.092566,	0.146634,	0.092566,	0.023205,	0.002289,	0.000088,
+                     0.000055,	0.001445,	0.014648,	0.058434,	0.092566,	0.058434,	0.014648,	0.001445,	0.000055,
+                     0.000014,	0.000362,	0.003672,	0.014648,	0.023205,	0.014648,	0.003672,	0.000362,	0.000014,
+                     0.000001,	0.000036,	0.000362,	0.001445,	0.002289,	0.001445,	0.000362,	0.000036,	0.000001,
+                     0.000000,	0.000001,	0.000014,	0.000055,	0.000088,	0.000055,	0.000014,	0.000001,	0.000000};
+*/
 
 /*float gaussianScale = 1.0/16.0;
 
@@ -45,21 +54,16 @@ float gaussian[] = {1,2,1,
                     2,4,2,
                     1,2,1};
 */
-float convolve(vec2 fragPos,vec2 dxTex)
+float convolve(vec2 fragPos,vec2 dxTex,float depth)
 {
     float sum = 0.0;
-    for(int y=-8;y<8;y++)
+    for(int x=-7;x<=7;x++)
     {
-        for(int x=-8;x<8;x++)
-        {
-            if(fragPos.x+x*dxTex.x<1.0 && fragPos.y+y*dxTex.y<1.0 && fragPos.x+x*dxTex.x>0.0 && fragPos.y+y*dxTex.y>0.0)
-            {
-                sum += texture(depthMap,fragPos+vec2(x*dxTex.x,y*dxTex.y),0).x;
-            }
-        }
+        float samp = texture(depthMap,fragPos+vec2(x*blurDir.x*dxTex.x,x*blurDir.y*dxTex.y),0).x;
+        sum += samp ;
     }
     //return 10.0;
-    return gaussianScale*sum;
+    return (gaussianScale*sum)/(15);
 }
 
 void main()
@@ -67,5 +71,15 @@ void main()
     vec2 dxTex;
     dxTex.x = 1.0/textureSize(depthMap,0).x;
     dxTex.y = 1.0/textureSize(depthMap,0).y;
-    gl_FragDepth = convolve(fragTexCoord,dxTex);
+    dxTex.y = 1.0/textureSize(depthMap,0).y;
+    float d = texture(depthMap,fragTexCoord,0).x;
+    if(d<1.0)
+    {
+        float val = convolve(fragTexCoord,dxTex,d);
+        fragColor = val;
+    }
+    else
+    {
+        fragColor = 1.0;
+    }
 }
