@@ -8,6 +8,7 @@
 #include"../Graphics/ParticleBuffer/ParticleBuffer.h"
 #include"../Graphics/Camera/Camera.h"
 #include"../Graphics/Model/Model.h"
+#include"../Graphics/CubeMap/CubeMap.h"
 #include"../Solver/AbstractSolver.h"
 #include"../Solver/SolverImpl/PBFSolver.h"
 #include"../Solver/SolverImpl/PBFSolverGPU.h"
@@ -71,6 +72,7 @@ private:
 
     QSurfaceFormat format;
     Camera camera;
+    ShaderProgram* skyBoxProgram;
     ShaderProgram* particleProgram;
     ShaderProgram* depthProgram;
     ShaderProgram* smoothProgram;
@@ -83,6 +85,8 @@ private:
 
     Light light;
     Model *sphere;
+    CubeMap* skyBox;
+    VertexBuffer* cube;
     VertexBuffer* screenQuad;
 
     glm::mat4 projection;

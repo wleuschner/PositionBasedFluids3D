@@ -13,6 +13,7 @@ add_subdirectory("Camera")
 add_subdirectory("Model")
 add_subdirectory("Material")
 add_subdirectory("AABB")
+add_subdirectory("CubeMap")
 
 set(HEADERS
    ${HEADERS}

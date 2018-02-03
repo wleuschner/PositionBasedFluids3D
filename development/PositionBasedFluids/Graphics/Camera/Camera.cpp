@@ -24,6 +24,11 @@ glm::mat4 Camera::getView()
     return glm::lookAt(eye,eye+center,up);
 }
 
+glm::mat4 Camera::getRotMat()
+{
+    return glm::mat4(glm::mat3(getView()));
+}
+
 glm::vec3 Camera::getPosition()
 {
     return eye;

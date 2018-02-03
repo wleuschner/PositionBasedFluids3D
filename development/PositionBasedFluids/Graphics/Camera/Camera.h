@@ -10,6 +10,7 @@ public:
     void translate(const glm::vec3& d);
     void rotate(float a,const glm::vec3& axis);
     glm::mat4 getView();
+    glm::mat4 getRotMat();
     glm::vec3 getPosition();
     glm::vec3 getForwardVec();
     glm::vec3 getUpVector();

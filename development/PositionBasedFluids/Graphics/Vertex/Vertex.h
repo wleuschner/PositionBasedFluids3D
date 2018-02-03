@@ -5,6 +5,8 @@
 class Vertex
 {
 public:
+    Vertex();
+    Vertex(const glm::vec3& pos);
     static void enableVertexAttribs();
     static void setVertexAttribs();
 

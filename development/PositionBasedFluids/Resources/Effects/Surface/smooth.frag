@@ -48,11 +48,14 @@ float gaussian[] = {1,2,1,
 float convolve(vec2 fragPos,vec2 dxTex)
 {
     float sum = 0.0;
-    for(int y=-8;y<=8;y++)
+    for(int y=-8;y<8;y++)
     {
-        for(int x=-8;x<=8;x++)
+        for(int x=-8;x<8;x++)
         {
-            sum += texture(depthMap,fragPos+vec2(x*dxTex.x,y*dxTex.y),0).x;
+            if(fragPos.x+x*dxTex.x<1.0 && fragPos.y+y*dxTex.y<1.0 && fragPos.x+x*dxTex.x>0.0 && fragPos.y+y*dxTex.y>0.0)
+            {
+                sum += texture(depthMap,fragPos+vec2(x*dxTex.x,y*dxTex.y),0).x;
+            }
         }
     }
     //return 10.0;

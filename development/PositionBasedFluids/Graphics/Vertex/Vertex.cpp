@@ -1,6 +1,15 @@
 #include"Vertex.h"
 #include<GL/glew.h>
 
+Vertex::Vertex()
+{
+}
+
+Vertex::Vertex(const glm::vec3& pos)
+{
+    this->pos = pos;
+}
+
 void Vertex::enableVertexAttribs()
 {
     glEnableVertexAttribArray(0);

@@ -84,12 +84,35 @@ void GLCanvas::initializeGL()
     glClearDepth(1.0);
     glDepthFunc(GL_LEQUAL);
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     //glCullFace(GL_BACK);
     //glEnable(GL_CULL_FACE);
     glDisable(GL_CULL_FACE);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
+
+    //Load Skybox Shader
+    Shader skyBoxVert(GL_VERTEX_SHADER,"Resources/Effects/skybox.vert");
+    if(!skyBoxVert.compile())
+    {
+        std::cout<<skyBoxVert.compileLog().c_str()<<std::endl;
+    }
+
+    Shader skyBoxFrag(GL_FRAGMENT_SHADER,"Resources/Effects/skybox.frag");
+    if(!skyBoxFrag.compile())
+    {
+        std::cout<<skyBoxFrag.compileLog().c_str()<<std::endl;
+    }
+
+    skyBoxProgram = new ShaderProgram();
+    skyBoxProgram->attachShader(skyBoxVert);
+    skyBoxProgram->attachShader(skyBoxFrag);
+    if(!skyBoxProgram->link())
+    {
+        std::cout<<skyBoxProgram->linkLog().c_str()<<std::endl;
+    }
+    skyBoxProgram->bind();
 
     //Load Depth Shaders
     Shader depthVert(GL_VERTEX_SHADER,"Resources/Effects/Surface/depth.vert");
@@ -236,6 +259,74 @@ void GLCanvas::initializeGL()
 
     sphere->bind();
 
+    //Load SkyBox Vertices and Cubemap
+    std::vector<Vertex> cubeVerts = {
+      Vertex(glm::vec3(-1.0f,  1.0f, -1.0f)),
+      Vertex(glm::vec3(-1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f, -1.0f)),
+      Vertex(glm::vec3(-1.0f,  1.0f, -1.0f)),
+
+      Vertex(glm::vec3(-1.0f, -1.0f,  1.0f)),
+      Vertex(glm::vec3(-1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(-1.0f,  1.0f, -1.0f)),
+      Vertex(glm::vec3(-1.0f,  1.0f, -1.0f)),
+      Vertex(glm::vec3(-1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(-1.0f, -1.0f,  1.0f)),
+
+      Vertex(glm::vec3(1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f, -1.0f)),
+
+      Vertex(glm::vec3(-1.0f, -1.0f,  1.0f)),
+      Vertex(glm::vec3(-1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f,  1.0f)),
+      Vertex(glm::vec3(-1.0f, -1.0f,  1.0f)),
+
+      Vertex(glm::vec3(-1.0f,  1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(-1.0f,  1.0f,  1.0f)),
+      Vertex(glm::vec3(-1.0f,  1.0f, -1.0f)),
+
+      Vertex(glm::vec3(-1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(-1.0f, -1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f, -1.0f)),
+      Vertex(glm::vec3(-1.0f, -1.0f,  1.0f)),
+      Vertex(glm::vec3(1.0f, -1.0f,  1.0f))
+    };
+
+    QImage negX,negY,negZ,posX,posY,posZ;
+    negX.load("Resources/Textures/Yokohama2/negx.jpg");
+    negY.load("Resources/Textures/Yokohama2/negy.jpg");
+    negZ.load("Resources/Textures/Yokohama2/negz.jpg");
+    posX.load("Resources/Textures/Yokohama2/posx.jpg");
+    posY.load("Resources/Textures/Yokohama2/posy.jpg");
+    posZ.load("Resources/Textures/Yokohama2/posz.jpg");
+
+    cube = new VertexBuffer();
+    cube->bind();
+    cube->upload(cubeVerts);
+
+    skyBox = new CubeMap();
+    skyBox->bind(0);
+    skyBox->upload_side(GL_TEXTURE_CUBE_MAP_NEGATIVE_X,negX.width(),negX.height(),negX.bits());
+    skyBox->upload_side(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y,negY.width(),negY.height(),negY.bits());
+    skyBox->upload_side(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z,negZ.width(),negZ.height(),negZ.bits());
+    skyBox->upload_side(GL_TEXTURE_CUBE_MAP_POSITIVE_X,posX.width(),posX.height(),posX.bits());
+    skyBox->upload_side(GL_TEXTURE_CUBE_MAP_POSITIVE_Y,posY.width(),posY.height(),posY.bits());
+    skyBox->upload_side(GL_TEXTURE_CUBE_MAP_POSITIVE_Z,posZ.width(),posZ.height(),posZ.bits());
+
+
+
     //Enable Vertex Attrib Arrays
     Vertex::setVertexAttribs();
     Vertex::enableVertexAttribs();
@@ -264,6 +355,22 @@ void GLCanvas::paintGL()
 
 void GLCanvas::renderParticles()
 {
+    glDepthMask(GL_FALSE);
+    cube->bind();
+    Vertex::setVertexAttribs();
+    Vertex::enableVertexAttribs();
+    glm::mat4 viewCube = camera.getRotMat();
+    glm::mat4 modelViewCube = viewCube*model;
+    glm::mat4 pvmCube = projection*modelViewCube;
+
+    skyBoxProgram->bind();
+    skyBoxProgram->uploadMat4("pvm",pvmCube);
+    skyBoxProgram->uploadInt("cube_texture",0);
+    skyBox->bind(0);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthMask(GL_TRUE);
+
     sphere->bind();
     Vertex::setVertexAttribs();
     Vertex::enableVertexAttribs();
@@ -279,7 +386,6 @@ void GLCanvas::renderParticles()
     glVertexAttribDivisor(3,1);
     glVertexAttribDivisor(4,1);
 
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     particleProgram->bind();
     view = camera.getView();
     glm::mat4 modelView = view*model;
@@ -300,20 +406,53 @@ void GLCanvas::renderSurface()
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
     glBindBuffer(GL_ARRAY_BUFFER,0);
-    //sphere->bind();
-    //Vertex::setVertexAttribs();
-    //Vertex::enableVertexAttribs();
 
-    particles->bind();
+    //Render Background
+    Texture bgImage;
+    Texture bgDepthImage;
+    bgImage.bind(0);
+    bgImage.createRenderImage(this->width(),this->height());
+    bgDepthImage.bind(1);
+    bgDepthImage.createDepthImage(this->width(),this->height());
+    FrameBufferObject fbo4;
+    fbo4.bind();
+    fbo4.attachColorImage(bgImage,0);
+    fbo4.attachDepthImage(bgDepthImage);
+    fbo4.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+    if(!fbo4.isComplete())
+    {
+        std::cout<<"FBO incomplete"<<std::endl;
+    }
+
+    //glDepthMask(GL_FALSE);
+    glm::mat4 viewCube = camera.getRotMat();
+    glm::mat4 modelViewCube = viewCube*model;
+    glm::mat4 pvmCube = projection*modelViewCube;
+
+    skyBoxProgram->bind();
+    skyBoxProgram->uploadMat4("pvm",pvmCube);
+    skyBoxProgram->uploadInt("cube_texture",0);
+    skyBox->bind(0);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    cube->bind();
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(3,0);
     glVertexAttribDivisor(4,0);
-    glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
-    glEnableVertexAttribArray(4);
+    Vertex::setVertexAttribs();
+    Vertex::enableVertexAttribs();
+    glDisableVertexAttribArray(3);
+    glDisableVertexAttribArray(4);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glDepthMask(GL_TRUE);
+    fbo4.unbind();
 
+    //sphere->bind();
+    //Vertex::setVertexAttribs();
+    //Vertex::enableVertexAttribs();
+
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
     view = camera.getView();
     glm::mat4 modelView = view*model;
     glm::mat4 pvm = projection*modelView;
@@ -338,6 +477,19 @@ void GLCanvas::renderSurface()
     depthProgram->uploadMat3("normalMatrix",normalMatrix);
     depthProgram->uploadLight("light0",light,view);
     glClear(GL_DEPTH_BUFFER_BIT);
+    particles->bind();
+    glVertexAttribDivisor(0,0);
+    glVertexAttribDivisor(1,0);
+    glVertexAttribDivisor(3,0);
+    glVertexAttribDivisor(4,0);
+
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glVertexAttribPointer(3,3,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)32);
+    glEnableVertexAttribArray(3);
+    glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
+    glEnableVertexAttribArray(4);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
     //glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
     fbo.unbind();
@@ -346,17 +498,21 @@ void GLCanvas::renderSurface()
     fbo2.setRenderBuffer({GL_NONE});
     fbo2.bind();*/
 
-    //Smooth Depthimage
 
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+    //Smooth Depthimage
     Texture smoothDepthImage;
-    smoothDepthImage.bind(1);
+    smoothDepthImage.bind(0);
     smoothDepthImage.createDepthImage(this->width(),this->height());
     smoothProgram->bind();
-    for(unsigned i=0;i<61;i++)
+    /*
+    for(unsigned i=0;i<0;i++)
     {
         FrameBufferObject fbo2;
+        smoothProgram->uploadInt("depthMap",0);
 
-        if(i%2==1)
+        if(i%2==0)
         {
             smoothDepthImage.bind(1);
             depthImage.bind(0);
@@ -371,18 +527,31 @@ void GLCanvas::renderSurface()
             fbo2.setRenderBuffer({GL_NONE});
         }
         fbo2.bind();
-        smoothProgram->uploadUnsignedInt("depthMap",0);
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+        glClearColor(0.0,0.0,0.0,1.0);
+        glClearDepth(1.0);
+        glClear(GL_DEPTH_BUFFER_BIT);
+        screenQuad->bind();
+        glVertexAttribDivisor(0,0);
+        glVertexAttribDivisor(1,0);
+        glVertexAttribDivisor(3,0);
+        glVertexAttribDivisor(4,0);
+        glEnableVertexAttribArray(0);
+        glEnableVertexAttribArray(1);
+        glEnableVertexAttribArray(2);
+        glDisableVertexAttribArray(3);
+        glDisableVertexAttribArray(4);
         glDrawArrays(GL_TRIANGLES,0,6);
         fbo2.unbind();
-    }
+    }*/
 
     //Calculate Thickness
+    glBindBuffer(GL_ARRAY_BUFFER,0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
     Texture thicknessImage;
     Texture thicknessDepthImage;
     thicknessImage.bind(0);
     thicknessImage.createRenderImage(this->width(),this->height());
-    thicknessDepthImage.bind(3);
+    thicknessDepthImage.bind(1);
     thicknessDepthImage.createDepthImage(this->width(),this->height());
     FrameBufferObject fbo3;
     fbo3.bind();
@@ -404,12 +573,22 @@ void GLCanvas::renderSurface()
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE,GL_ONE);
 
-    glClear(GL_DEPTH_BUFFER_BIT|GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT);
+    particles->bind();
+    glVertexAttribDivisor(0,0);
+    glVertexAttribDivisor(1,0);
+    glVertexAttribDivisor(3,0);
+    glVertexAttribDivisor(4,0);
+    glEnableVertexAttribArray(0);
+    glEnableVertexAttribArray(1);
+    glEnableVertexAttribArray(2);
+    glEnableVertexAttribArray(3);
+    glEnableVertexAttribArray(4);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    glFinish();
+    fbo3.unbind();
 
     //Qt5 Hack to restore framebuffer
     QOpenGLFramebufferObject::bindDefault();
@@ -421,7 +600,6 @@ void GLCanvas::renderSurface()
     Vertex::enableVertexAttribs();
     glDisableVertexAttribArray(3);
     glDisableVertexAttribArray(4);
-    Vertex::enableVertexAttribs();
     //depthImage.bind(0);
     //smoothDepthImage.bind(0);
     surfaceProgram->bind();
@@ -432,9 +610,13 @@ void GLCanvas::renderSurface()
     surfaceProgram->uploadScalar("fy",projection[1][1]);
     surfaceProgram->uploadInt("depthMap",0);
     surfaceProgram->uploadInt("thicknessMap",1);
+    surfaceProgram->uploadInt("background",2);
+    surfaceProgram->uploadInt("skybox",3);
     surfaceProgram->uploadLight("light0",light,view);
     depthImage.bind(0);
     thicknessImage.bind(1);
+    bgImage.bind(2);
+    skyBox->bind(3);
 
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLES,0,6);
