@@ -34,6 +34,7 @@ float gaussian[] = {0.000000,	0.000001,	0.000005,	0.000014,	0.000032,	0.000059,	
 
 float gaussianScale = 1.0;
 float gaussian[] = {0.27901,0.44198,0.27901};
+
 /*
 float gaussianScale = 1.0;
 float gaussian[] = {0.000489,0.002403,0.009246,0.027840,0.065602,0.120999,0.174697,0.197448,0.174697,0.120999,0.065602,0.027840,0.009246,0.002403,0.000489};
@@ -42,6 +43,7 @@ float gaussian[] = {0.000489,0.002403,0.009246,0.027840,0.065602,0.120999,0.1746
 float gaussianScale = 1.0;
 float gaussian[] = {0.000003,0.000006,0.000012,0.000023,0.000044,0.000081,0.000147,0.00026,0.000446,0.000745,0.001211,0.001913,0.002939,0.004393,0.006386,0.00903,0.012419,0.016614,0.021618,0.02736,0.033681,0.040329,0.046969,0.053207,0.058627,0.062833,0.0655,0.066414,0.0655,0.062833,0.058627,0.053207,0.046969,0.040329,0.033681,0.02736,0.021618,0.016614,0.012419,0.00903,0.006386,0.004393,0.002939,0.001913,0.001211,0.000745,0.000446,0.00026,0.000147,0.000081,0.000044,0.000023,0.000012,0.000006,0.000003};
 */
+
 /*
 float gaussianScale = 1.0;
 
@@ -62,14 +64,14 @@ float gaussian[] = {1,2,1,
                     2,4,2,
                     1,2,1};
 */
-float convolve(vec2 fragPos,vec2 dxTex,float depth)
+float convolve(vec2 fragPos,vec2 dxTex)
 {
     float sum = 0.0;
+    //for(int x=-1;x<=1;x++)
     for(int x=-1;x<=1;x++)
-    //for(int x=-7;x<=7;x++)
     {
-        float samp = texture(depthMap,fragPos+vec2(x*blurDir.x*dxTex.x,x*blurDir.y*dxTex.y),0).x;
-        sum += samp ;
+        float samp = texture(depthMap,fragPos+vec2(x*blurDir*dxTex),0).x;
+        sum += samp;
     }
     //return 10.0;
     return (gaussianScale*sum)/(3);
@@ -77,18 +79,7 @@ float convolve(vec2 fragPos,vec2 dxTex,float depth)
 
 void main()
 {
-    vec2 dxTex;
-    dxTex.x = 1.0/textureSize(depthMap,0).x;
-    dxTex.y = 1.0/textureSize(depthMap,0).y;
-    dxTex.y = 1.0/textureSize(depthMap,0).y;
-    float d = texture(depthMap,fragTexCoord,0).x;
-    if(true)
-    {
-        float val = convolve(fragTexCoord,dxTex,d);
-        fragColor = val;
-    }
-    else
-    {
-        fragColor = 1.0;
-    }
+    vec2 dxTex = vec2(1.0,1.0)/textureSize(depthMap,0);
+    float val = convolve(fragTexCoord,dxTex);
+    fragColor = val;
 }

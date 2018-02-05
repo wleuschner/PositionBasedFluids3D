@@ -789,8 +789,8 @@ void GLCanvas::reset()
     particles->clear();
     particles->bind();
     unsigned int cc = 0;
-    int ppu = 15;
-    //int ppu = 25;
+    //int ppu = 15;
+    int ppu = 20;
     for( int z=-ppu;z!=ppu;z++)
     {
         for( int y=-ppu;y!=ppu;y++)

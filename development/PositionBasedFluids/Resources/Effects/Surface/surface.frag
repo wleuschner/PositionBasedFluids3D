@@ -9,7 +9,6 @@ struct LightSource
     vec3 spec;
 };
 
-uniform vec3 cPos;
 uniform float vpWidth;
 uniform float vpHeight;
 uniform sampler2D depthMap;
@@ -38,8 +37,7 @@ vec3 getEyePos(vec2 texCoord,float depth)
 
 void main()
 {
-    float dxTex = 1.0f/textureSize(depthMap,0).x;
-    float dyTex = 1.0f/textureSize(depthMap,0).y;
+    vec2 dxTex = vec2(1.0,1.0)/textureSize(depthMap,0);
 
     float depth = texture(depthMap,fragTexCoord).x;
     if(depth>=1.0)
@@ -49,15 +47,15 @@ void main()
     }
     vec3 eyePos = getEyePos(fragTexCoord,depth);
 
-    vec3 ddx = getEyePos(fragTexCoord+vec2(dxTex,0.0),texture(depthMap,fragTexCoord+vec2(dxTex,0.0)).x)-eyePos;
-    vec3 ddx2 = eyePos-getEyePos(fragTexCoord+vec2(-dxTex,0.0),texture(depthMap,fragTexCoord+vec2(-dxTex,0.0)).x);
+    vec3 ddx = getEyePos(fragTexCoord+vec2(dxTex.x,0.0),texture(depthMap,fragTexCoord+vec2(dxTex.x,0.0)).x)-eyePos;
+    vec3 ddx2 = eyePos-getEyePos(fragTexCoord+vec2(-dxTex.x,0.0),texture(depthMap,fragTexCoord+vec2(-dxTex.x,0.0)).x);
     if(abs(ddx.z)<abs(ddx2.z))
     {
         ddx = ddx2;
     }
 
-    vec3 ddy = getEyePos(fragTexCoord+vec2(0.0,dyTex),texture(depthMap,fragTexCoord+vec2(0.0,dyTex)).x)-eyePos;
-    vec3 ddy2 = eyePos-getEyePos(fragTexCoord+vec2(0.0,-dyTex),texture(depthMap,fragTexCoord+vec2(0.0,-dyTex)).x);
+    vec3 ddy = getEyePos(fragTexCoord+vec2(0.0,dxTex.y),texture(depthMap,fragTexCoord+vec2(0.0,dxTex.y)).x)-eyePos;
+    vec3 ddy2 = eyePos-getEyePos(fragTexCoord+vec2(0.0,-dxTex.y),texture(depthMap,fragTexCoord+vec2(0.0,-dxTex.y)).x);
     if(abs(ddy.z)<abs(ddy2.z))
     {
         ddy = ddy2;
@@ -68,7 +66,7 @@ void main()
     //Compute Thickness
     float d = texture(thicknessMap,fragTexCoord).x;
 
-    vec3 V = normalize(eyePos-vec3(modelView*vec4(cPos,1.0)));
+    vec3 V = normalize(eyePos);
     vec3 L = normalize(eyePos-light.pos);
     float R0 = (1.0-1.33)/(1.0+1.33);
     float RTheta = R0+(1.0-R0)*pow((1.0-dot(N,V)),5);
@@ -78,16 +76,16 @@ void main()
     float spec = 0.0;
     if(diff>0.0)
     {
-        spec = max(pow(dot(N,H),20.0),0.0);
+        spec = max(pow(dot(N,H),50.0),0.0);
     }
     //vec3 reflectionCol = vec3(0.0,0.0,0.7);
-    vec3 reflectionCol = texture(skybox,normalize(reflect(V,N))).xyz;
+    vec3 reflectionCol = texture(skybox,normalize(reflect(-N,V))).xyz;
     vec3 bgCol = texture(background,fragTexCoord+N.xy*d).xyz;
     //bgCol = vec3(0.0,0.0,0.0);
-    vec3 c_fluid;
-    c_fluid.r = mix(1.0,bgCol.r,exp(0.40*-d));
+    vec3 c_fluid = mix(vec3(0.4,0.499,0.998),bgCol,exp(vec3(0.4,0.499,0.998)*-d));
+    /*c_fluid.r = mix(1.0,bgCol.r,exp(0.40*-d));
     c_fluid.g = mix(1.0,bgCol.g,exp(0.499*-d));
-    c_fluid.b = mix(1.0,bgCol.b,exp(0.998*-d));
+    c_fluid.b = mix(1.0,bgCol.b,exp(0.998*-d));*/
 
-    fragColor = clamp(vec4(RTheta*reflectionCol+(1.0-RTheta)*c_fluid+vec3(0.7,0.7,0.7)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));
+    fragColor = clamp(vec4(RTheta*reflectionCol+(1.0-RTheta)*c_fluid+vec3(1.0,1.0,1.0)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));
 }
