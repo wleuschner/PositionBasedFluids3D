@@ -85,8 +85,8 @@ void main()
     vec3 bgCol = texture(background,fragTexCoord+N.xy*d).xyz;
     //bgCol = vec3(0.0,0.0,0.0);
     vec3 c_fluid;
-    c_fluid.r = mix(1.0,bgCol.r,exp(1.00*-d));
-    c_fluid.g = mix(1.0,bgCol.g,exp(0.999*-d));
+    c_fluid.r = mix(1.0,bgCol.r,exp(0.40*-d));
+    c_fluid.g = mix(1.0,bgCol.g,exp(0.499*-d));
     c_fluid.b = mix(1.0,bgCol.b,exp(0.998*-d));
 
     fragColor = clamp(vec4(RTheta*reflectionCol+(1.0-RTheta)*c_fluid+vec3(0.7,0.7,0.7)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));

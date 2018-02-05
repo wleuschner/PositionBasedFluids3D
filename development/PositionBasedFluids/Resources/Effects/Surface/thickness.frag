@@ -31,6 +31,6 @@ void main()
     vec4 clipPos = projection*fragPos;
     gl_FragDepth = clipPos.z/clipPos.w;
     //fragColor = vec4(0.0,1.0,0.0,1.0);
-    fragColor = vec4(N.z*particleSize,N.z*particleSize,N.z*particleSize,1.0);
+    fragColor = vec4(2*(N.z*particleSize),2*(N.z*particleSize),2*(N.z*particleSize),1.0);
 
 }

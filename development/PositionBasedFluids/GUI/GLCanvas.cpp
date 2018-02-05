@@ -225,7 +225,7 @@ void GLCanvas::initializeGL()
     particleProgram->bind();
 
     //Create Light
-    light = Light(glm::vec3(0.0,20.0,0.0));
+    light = Light(glm::vec3(20.0,20.0,0.0));
 
     //Create Screenquad
     std::vector<Vertex> screenQuadVerts(6);
@@ -551,7 +551,7 @@ void GLCanvas::renderSurface()
         screenQuad->bind();
         glDrawArrays(GL_TRIANGLES,0,6);
     }
-    for(unsigned i=1;i<11;i++)
+    for(unsigned i=1;i<25;i++)
     {
         Texture tempImage;
         tempImage.bind(0);
@@ -790,6 +790,7 @@ void GLCanvas::reset()
     particles->bind();
     unsigned int cc = 0;
     int ppu = 15;
+    //int ppu = 25;
     for( int z=-ppu;z!=ppu;z++)
     {
         for( int y=-ppu;y!=ppu;y++)

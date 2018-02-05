@@ -98,7 +98,7 @@ void main()
     //Apply external forces
     case 0:
         {
-            particlesFront[gId].vel += vec3(0.0,-9.81,0.0);
+            particlesFront[gId].vel += timestep*vec3(0.0,-9.81,0.0);
             particlesFront[gId].tempPos = particlesFront[gId].pos + timestep*particlesFront[gId].vel;
             break;
         }
@@ -264,17 +264,32 @@ void main()
                         if(dot(pf.tempPos-n.pos,pf.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
                             curl += cross(n.vel-pf.vel,gradSpikey(pf.tempPos-n.pos));
+                        }
+                    }
+                }
+            }
+
+            if(dot(curl,curl)>0.0)
+            {
+                vec3 fvort = cfmRegularization*cross(normalize(curl),curl);
+                particlesFront[gId].vel += timestep*fvort;
+            }
+
+            for(uint i=0;i<9;i++)
+            {
+                for(uint j=beginIdx[i];j<endIdx[i];j++)
+                {
+                    Particle n = particlesFront[j];
+                    if(pf.index!=n.index)
+                    {
+                        if(dot(pf.tempPos-n.pos,pf.tempPos-n.pos)<=kernelSupport*kernelSupport)
+                        {
                             velAccum += (n.vel-pf.vel)*kernelPoly6(pf.tempPos-n.pos);
                         }
                     }
                 }
             }
-            /*
-            if(dot(curl,curl)>0.0)
-            {
-                particlesFront[gId].vel += artVort*cross(normalize(curl),curl);
-            }
-            */
+
             particlesFront[gId].vel += artVisc*velAccum;
             particlesFront[gId].pos  = pf.tempPos;
             break;
