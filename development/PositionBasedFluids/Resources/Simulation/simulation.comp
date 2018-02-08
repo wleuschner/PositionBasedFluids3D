@@ -89,6 +89,8 @@ vec3 gradViscocity(vec3 r);
 uint beginIdx[9];
 uint endIdx[9];
 
+shared uint temp[32*256];
+
 void main()
 {
     uint gId = gl_GlobalInvocationID.x;
@@ -134,13 +136,16 @@ void main()
     //Compute Histogram
     case 2:
         {
-            shared uint temp[1024];
             uint lId = gl_LocalInvocationID.x;
             //lId = gId;
             int offset = 1;
-            temp[2*lId] = histogram[2*lId+(gl_WorkGroupID.x*1024)];
-            temp[2*lId+1] = histogram[2*lId+1+(gl_WorkGroupID.x*1024)];
-            for(uint d=1024>>1;d>0;d>>=1)
+            uint ai = lId;
+            uint bi = lId + (256/2);
+            uint bankOffsetA = ai/32;
+            uint bankOffsetB = bi/32;
+            temp[ai+bankOffsetA] = histogram[ai+256*gl_WorkGroupID.x];
+            temp[bi+bankOffsetB] = histogram[bi+256*gl_WorkGroupID.x];
+            for(uint d=256>>1;d>0;d>>=1)
             {
                 memoryBarrier();
                 barrier();
@@ -148,16 +153,18 @@ void main()
                 {
                     uint ai = offset*(2*lId+1)-1;
                     uint bi = offset*(2*lId+2)-1;
+                    ai += ai/32;
+                    bi += bi/32;
                     temp[bi] += temp[ai];
                 }
                 offset *= 2;
             }
             if(lId==0)
             {
-                sums[gl_WorkGroupID.x] = temp[1024-1];
-                temp[1024-1]=0;
+                sums[gl_WorkGroupID.x] = temp[256-1+((256-1)/32)];
+                temp[256-1+((256-1)/32)]=0;
             }
-            for(uint d=1;d<1024;d*=2)
+            for(uint d=1;d<256;d*=2)
             {
                 offset>>=1;
                 memoryBarrier();
@@ -166,6 +173,8 @@ void main()
                 {
                     uint ai = offset*(2*lId+1)-1;
                     uint bi = offset*(2*lId+2)-1;
+                    ai += ai/32;
+                    bi += bi/32;
                     uint t = temp[ai];
                     temp[ai] = temp[bi];
                     temp[bi] += t;
@@ -173,8 +182,8 @@ void main()
             }
             memoryBarrier();
             barrier();
-            histogram[2*lId+(gl_WorkGroupID.x*1024)] = temp[2*lId];
-            histogram[2*lId+1+(gl_WorkGroupID.x*1024)] = temp[2*lId+1];
+            histogram[ai+(gl_WorkGroupID.x*256)] = temp[ai+bankOffsetA];
+            histogram[bi+(gl_WorkGroupID.x*256)] = temp[bi+bankOffsetB];
             /*uint acc=0;
             for(uint i=0;i<=nBuckets;i++)
             {
@@ -186,12 +195,15 @@ void main()
         }
     case 10:
         {
-            shared uint temp[1024];
             uint lId = gl_LocalInvocationID.x;
             int offset = 1;
-            temp[2*lId] = sums[2*lId];
-            temp[2*lId+1] = sums[2*lId+1];
-            for(uint d=1024>>1;d>0;d>>=1)
+            uint ai = lId;
+            uint bi = lId + (256/2);
+            uint bankOffsetA = ai/32;
+            uint bankOffsetB = bi/32;
+            temp[ai+bankOffsetA] = sums[ai];
+            temp[bi+bankOffsetB] = sums[bi];
+            for(uint d=256>>1;d>0;d>>=1)
             {
                 memoryBarrier();
                 barrier();
@@ -199,15 +211,17 @@ void main()
                 {
                     uint ai = offset*(2*lId+1)-1;
                     uint bi = offset*(2*lId+2)-1;
+                    ai += ai/32;
+                    bi += bi/32;
                     temp[bi] += temp[ai];
                 }
                 offset *= 2;
             }
             if(lId==0)
             {
-                temp[1024-1]=0;
+                temp[256-1+((256-1)/32)]=0;
             }
-            for(uint d=1;d<1024;d*=2)
+            for(uint d=1;d<256;d*=2)
             {
                 offset>>=1;
                 memoryBarrier();
@@ -216,6 +230,8 @@ void main()
                 {
                     uint ai = offset*(2*lId+1)-1;
                     uint bi = offset*(2*lId+2)-1;
+                    ai += ai/32;
+                    bi += bi/32;
                     uint t = temp[ai];
                     temp[ai] = temp[bi];
                     temp[bi] += t;
@@ -223,15 +239,15 @@ void main()
             }
             memoryBarrier();
             barrier();
-            incr[2*lId] = temp[2*lId];
-            incr[2*lId+1] = temp[2*lId+1];
+            incr[ai] = temp[ai+bankOffsetA];
+            incr[bi] = temp[bi+bankOffsetB];
             break;
         }
     case 11:
         {
             uint lId = gl_LocalInvocationID.x;
             uint wId = gl_WorkGroupID.x;
-            histogram[lId+((wId)*1024)]+=incr[wId];
+            histogram[lId+((wId)*256)]+=incr[wId];
             //histogram[lId+(gl_WorkGroupID.x+1)*512]+=incr[gl_WorkGroupID.x];
             break;
         }
