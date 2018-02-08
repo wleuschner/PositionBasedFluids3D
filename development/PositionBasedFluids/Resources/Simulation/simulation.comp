@@ -36,6 +36,7 @@ uniform vec3 minOfs;
 uniform ivec3 dimSize;
 uniform uint nParticles;
 uniform uint nBuckets;
+uniform uint nBlocks;
 
 layout (std430,binding=0) buffer frontBuffer
 {
@@ -51,6 +52,17 @@ layout (std430,binding=2) buffer histBuffer
 {
     uint histogram[];
 };
+
+layout (std430,binding=4) buffer sumsBuffer
+{
+    uint sums[];
+};
+
+layout (std430,binding=5) buffer incrBuffer
+{
+    uint incr[];
+};
+
 
 layout (std430,binding=3) buffer ofsBuffer
 {
@@ -122,13 +134,105 @@ void main()
     //Compute Histogram
     case 2:
         {
-            uint acc=0;
+            shared uint temp[1024];
+            uint lId = gl_LocalInvocationID.x;
+            //lId = gId;
+            int offset = 1;
+            temp[2*lId] = histogram[2*lId+(gl_WorkGroupID.x*1024)];
+            temp[2*lId+1] = histogram[2*lId+1+(gl_WorkGroupID.x*1024)];
+            for(uint d=1024>>1;d>0;d>>=1)
+            {
+                memoryBarrier();
+                barrier();
+                if(lId<d)
+                {
+                    uint ai = offset*(2*lId+1)-1;
+                    uint bi = offset*(2*lId+2)-1;
+                    temp[bi] += temp[ai];
+                }
+                offset *= 2;
+            }
+            if(lId==0)
+            {
+                sums[gl_WorkGroupID.x] = temp[1024-1];
+                temp[1024-1]=0;
+            }
+            for(uint d=1;d<1024;d*=2)
+            {
+                offset>>=1;
+                memoryBarrier();
+                barrier();
+                if(lId<d)
+                {
+                    uint ai = offset*(2*lId+1)-1;
+                    uint bi = offset*(2*lId+2)-1;
+                    uint t = temp[ai];
+                    temp[ai] = temp[bi];
+                    temp[bi] += t;
+                }
+            }
+            memoryBarrier();
+            barrier();
+            histogram[2*lId+(gl_WorkGroupID.x*1024)] = temp[2*lId];
+            histogram[2*lId+1+(gl_WorkGroupID.x*1024)] = temp[2*lId+1];
+            /*uint acc=0;
             for(uint i=0;i<=nBuckets;i++)
             {
                 uint tVal = histogram[i];
                 histogram[i] = acc;
                 acc+=tVal;
+            }*/
+            break;
+        }
+    case 10:
+        {
+            shared uint temp[1024];
+            uint lId = gl_LocalInvocationID.x;
+            int offset = 1;
+            temp[2*lId] = sums[2*lId];
+            temp[2*lId+1] = sums[2*lId+1];
+            for(uint d=1024>>1;d>0;d>>=1)
+            {
+                memoryBarrier();
+                barrier();
+                if(lId<d)
+                {
+                    uint ai = offset*(2*lId+1)-1;
+                    uint bi = offset*(2*lId+2)-1;
+                    temp[bi] += temp[ai];
+                }
+                offset *= 2;
             }
+            if(lId==0)
+            {
+                temp[1024-1]=0;
+            }
+            for(uint d=1;d<1024;d*=2)
+            {
+                offset>>=1;
+                memoryBarrier();
+                barrier();
+                if(lId<d)
+                {
+                    uint ai = offset*(2*lId+1)-1;
+                    uint bi = offset*(2*lId+2)-1;
+                    uint t = temp[ai];
+                    temp[ai] = temp[bi];
+                    temp[bi] += t;
+                }
+            }
+            memoryBarrier();
+            barrier();
+            incr[2*lId] = temp[2*lId];
+            incr[2*lId+1] = temp[2*lId+1];
+            break;
+        }
+    case 11:
+        {
+            uint lId = gl_LocalInvocationID.x;
+            uint wId = gl_WorkGroupID.x;
+            histogram[lId+((wId)*1024)]+=incr[wId];
+            //histogram[lId+(gl_WorkGroupID.x+1)*512]+=incr[gl_WorkGroupID.x];
             break;
         }
     //Reoder Particles

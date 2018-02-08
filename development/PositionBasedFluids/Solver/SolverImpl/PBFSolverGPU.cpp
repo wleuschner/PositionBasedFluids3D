@@ -43,11 +43,13 @@ void PBFSolverGPU::solve()
     unsigned int elems = dimSize.x*dimSize.y*dimSize.z;
 
     //Setup Compute Shader
-    std::vector<unsigned int> bufData(elems);
+    std::vector<unsigned int> bufData((elems+(1024-elems%1024)));
 
     unsigned int histBuf;
     unsigned int ofsBuf;
     unsigned int backBuf;
+    unsigned int sumsBuf;
+    unsigned int incrBuf;
 
     glGenBuffers(1,&backBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,backBuf);
@@ -55,11 +57,20 @@ void PBFSolverGPU::solve()
 
     glGenBuffers(1,&histBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2,histBuf);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*(elems+1),bufData.data(),GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*(elems+(1024-elems%1024)),bufData.data(),GL_DYNAMIC_DRAW);
 
     glGenBuffers(1,&ofsBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,3,ofsBuf);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*elems,bufData.data(),GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*(elems+(1024-elems%1024)),bufData.data(),GL_DYNAMIC_DRAW);
+
+    glGenBuffers(1,&sumsBuf);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,4,sumsBuf);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*1024,bufData.data(),GL_DYNAMIC_DRAW);
+
+    glGenBuffers(1,&incrBuf);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,5,incrBuf);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*1024,bufData.data(),GL_DYNAMIC_DRAW);
+
 
     computeProgram->bind();
     computeProgram->uploadScalar("timestep",timestep);
@@ -106,11 +117,57 @@ void PBFSolverGPU::solve()
 
 
     computeProgram->uploadUnsignedInt("taskId",2);
-    computeProgram->dispatch(1,1,1,1,1,1);
+    computeProgram->dispatch(ceil(elems/1024.0),1,1,512,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
     glDeleteSync(syncObj);
+
+    computeProgram->uploadUnsignedInt("taskId",10);
+    computeProgram->uploadUnsignedInt("nBlocks",ceil(elems/1024.0));
+
+    computeProgram->dispatch(1,1,1,ceil(elems/1024.0),1,1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+    syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+    glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
+
+
+    computeProgram->uploadUnsignedInt("taskId",11);
+    computeProgram->dispatch(ceil(elems/1024.0),1,1,1024,1,1);
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+    syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
+    glClientWaitSync(syncObj,0,1000*1000*1000*2);
+    glDeleteSync(syncObj);
+
+/*
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,sumsBuf);
+    unsigned int* b = (unsigned int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER,GL_READ_ONLY);
+    std::cout<<elems<<" "<<ceil(elems/1024.0)<<std::endl;
+    for(int i=0;i<ceil(elems/1024.0);i++)
+    {
+        std::cout<<b[i]<<" ";
+    }
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+    std::cout<<std::endl;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,incrBuf);
+    b = (unsigned int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER,GL_READ_ONLY);
+    std::cout<<elems<<" "<<ceil(elems/1024.0)<<std::endl;
+    for(int i=0;i<ceil(elems/1024.0);i++)
+    {
+        std::cout<<b[i]<<" ";
+    }
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+    std::cout<<std::endl;
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER,histBuf);
+    b = (unsigned int*)glMapBuffer(GL_SHADER_STORAGE_BUFFER,GL_READ_ONLY);
+    for(int i=0;i<elems;i++)
+    {
+        std::cout<<b[i]<<" ";
+    }
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
 
 
     computeProgram->uploadUnsignedInt("taskId",3);
@@ -174,12 +231,15 @@ void PBFSolverGPU::solve()
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,1,0);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2,0);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,3,0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,4,0);
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER,5,0);
 
 
     glDeleteBuffers(1,&backBuf);
     glDeleteBuffers(1,&histBuf);
     glDeleteBuffers(1,&ofsBuf);
-
+    glDeleteBuffers(1,&sumsBuf);
+    glDeleteBuffers(1,&incrBuf);
 }
 
 void PBFSolverGPU::setDensityKernel(int id)
