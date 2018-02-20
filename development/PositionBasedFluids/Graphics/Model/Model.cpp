@@ -1,13 +1,44 @@
 #include"Model.h"
+#include <glm/gtc/matrix_transform.hpp>
 #include <GL/glew.h>
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/mesh.h>
 #include <assimp/scene.h>
 #include <cmath>
+#include <iostream>
+#include "../FrameBufferObject/FrameBufferObject.h"
+ShaderProgram* Model::voxelProgram = NULL;
 
 Model::Model()
 {
+    if(voxelProgram==NULL)
+    {
+        voxelProgram = new ShaderProgram();
+        Shader vert(GL_VERTEX_SHADER,"Resources/Voxel/voxel.vert");
+        if(!vert.compile())
+        {
+            std::cout<<vert.compileLog()<<std::endl;
+        }
+        Shader frag(GL_FRAGMENT_SHADER,"Resources/Voxel/voxel.frag");
+        if(!frag.compile())
+        {
+            std::cout<<frag.compileLog()<<std::endl;
+        }
+        Shader geom(GL_GEOMETRY_SHADER,"Resources/Voxel/voxel.geom");
+        if(!geom.compile())
+        {
+            std::cout<<geom.compileLog()<<std::endl;
+        }
+        voxelProgram->attachShader(vert);
+        voxelProgram->attachShader(geom);
+        voxelProgram->attachShader(frag);
+        if(!voxelProgram->link())
+        {
+            std::cout<<voxelProgram->linkLog()<<std::endl;
+        }
+        voxelProgram->bind();
+    }
 }
 
 Model::~Model()
@@ -39,6 +70,12 @@ bool Model::load(std::string path)
         {
             aiVector3D v = mesh->mVertices[i];
             glm::vec3 pos = glm::vec3(v.x,v.y,v.z);
+            aabb.max.x = glm::max(pos.x,aabb.max.x);
+            aabb.max.y = glm::max(pos.y,aabb.max.y);
+            aabb.max.z = glm::max(pos.z,aabb.max.z);
+            aabb.min.x = glm::min(pos.x,aabb.min.x);
+            aabb.min.y = glm::min(pos.y,aabb.min.y);
+            aabb.min.z = glm::min(pos.z,aabb.min.z);
             position.push_back(pos);
             if(mesh->HasNormals())
             {
@@ -128,7 +165,6 @@ void Model::setMaterial(const Material &value)
     material = value;
 }
 
-
 void Model::draw(ShaderProgram* shader)
 {
     bind();
@@ -153,6 +189,143 @@ void Model::draw(ShaderProgram* shader)
 
 
     glDrawElements(GL_TRIANGLES,indices.size(),GL_UNSIGNED_INT,(void*)0);
+}
+
+ParticleBuffer* Model::voxelize(float particleSize)
+{
+    glm::vec3 ext = aabb.getExtent();
+
+    unsigned int layers = ceil(ext.z/(particleSize*32*4));
+    unsigned int width = ceil(ext.x/particleSize);
+    unsigned int height = ceil(ext.y/particleSize);
+
+    glm::mat4 orthProj = glm::ortho(-ext.x/2,ext.x/2,-ext.y/2,ext.y/2);
+    glm::mat4 pv = orthProj*glm::translate(glm::mat4(),glm::vec3(-aabb.getCenter().x,-aabb.getCenter().y,aabb.min.z));
+
+
+    FrameBufferObject fbo;
+    TextureArray texArray;
+    texArray.bind(0);
+    /*ext.x/particleSize,ext.y/particleSize,((ext.z/32)/particleSize)*/
+    texArray.createRenderArray(width,height,layers);
+    //texArray.createRenderArray(10,10,512);
+
+    fbo.bind();
+    fbo.attachColorArray(texArray,0);
+    //fbo.attachDepthArray(depthArray);
+    fbo.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+    if(!fbo.isComplete())
+    {
+        std::cout<<"FBO incomplete"<<std::endl;
+    }
+    fbo.bind();
+    bind();
+    Vertex::setVertexAttribs();
+    Vertex::enableVertexAttribs();
+    voxelProgram->bind();
+    voxelProgram->uploadMat4("projection",pv);
+    voxelProgram->uploadScalar("particleSize",particleSize);
+    texArray.bind(0);
+
+    glViewport(0,0,width,height);
+    glEnable(GL_DEPTH_CLAMP);
+    glEnable(GL_COLOR_LOGIC_OP);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+    glDisable(GL_BLEND);
+    glLogicOp(GL_XOR);
+    glClearColor(0,0,0,0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glDrawElements(GL_TRIANGLES,indices.size(),GL_UNSIGNED_INT,(void*)0);
+    glEnable(GL_BLEND);
+    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_COLOR_LOGIC_OP);
+    glDisable(GL_DEPTH_CLAMP);
+    glFlush();
+    fbo.unbind();
+
+    //Read Voxels from Texture Array
+    unsigned int* buffer = new unsigned int[4*width*height*layers];
+    //glReadBuffer(GL_COLOR_ATTACHMENT0);
+    //glReadPixels(0,0,width,height,GL_RGBA,GL_UNSIGNED_INT,buffer);
+    texArray.bind(0);
+    glGetTexImage(GL_TEXTURE_2D_ARRAY,0,GL_RGBA_INTEGER,GL_UNSIGNED_INT,buffer);
+    ParticleBuffer* voxelParticles = new ParticleBuffer();
+    voxelParticles->bind();
+
+    unsigned int part=0;
+    for(unsigned int l=0;l<layers;l++)
+    {
+        //glGetTextureSubImage(GL_TEXTURE_2D_ARRAY,0,0,0,l,width,height,0,GL_RGBA,GL_UNSIGNED_INT,4*width*height*layers,buffer);
+        for(unsigned int y=0;y<height;y++)
+        {
+            for(unsigned int x=0;x<width;x++)
+            {
+                //std::cout<<"("<<(unsigned int)buffer[(x*4)+width*4*y+(width*4*height)*l]<<","<<(unsigned int)buffer[1+(x*4)+width*4*y+(width*4*height)*l]<<","<<(unsigned int)buffer[2+(x*4)+width*4*y+(width*4*height)*l]<<","<<(unsigned int)buffer[3+(x*4)+width*4*y+(width*4*height)*l]<<")"<<std::endl;
+                //Red Channel
+                for(unsigned int d=0;d<32;d++)
+                {
+                    if(buffer[(x*4)+width*4*y+(width*4*height)*l]&1)
+                    {
+                        float xp = aabb.min.x+x*particleSize;
+                        float yp = aabb.min.y+y*particleSize;
+                        float zp = aabb.min.z+l*32*4*particleSize+d*particleSize;
+                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        part++;
+                    }
+                    buffer[(x*4)+width*4*y+(width*4*height)*l]>>=1;
+                }
+                //Green Channel
+                for(unsigned int d=0;d<32;d++)
+                {
+
+                    if(buffer[1+(x*4)+width*4*y+(width*4*height)*l]&1)
+                    {
+                        float xp = aabb.min.x+x*particleSize;
+                        float yp = aabb.min.y+y*particleSize;
+                        float zp = aabb.min.z+l*32*4*particleSize+(d+32)*particleSize;
+                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        part++;
+                    }
+                    buffer[1+(x*4)+width*4*y+(width*4*height)*l]>>=1;
+                }
+                //Blue Channel
+                for(unsigned int d=0;d<32;d++)
+                {
+
+                    if(buffer[2+(x*4)+width*4*y+(width*4*height)*l]&1)
+                    {
+                        float xp = aabb.min.x+x*particleSize;
+                        float yp = aabb.min.y+y*particleSize;
+                        float zp = aabb.min.z+l*32*4*particleSize+(d+64)*particleSize;
+                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        part++;
+                    }
+                    buffer[2+(x*4)+width*4*y+(width*4*height)*l]>>=1;
+                }
+                //Alpha Channel
+                for(unsigned int d=0;d<32;d++)
+                {
+
+                    if(buffer[3+(x*4)+width*4*y+(width*4*height)*l]&1)
+                    {
+                        float xp = aabb.min.x+x*particleSize;
+                        float yp = aabb.min.y+y*particleSize;
+                        float zp = aabb.min.z+l*32*4*particleSize+(d+96)*particleSize;
+                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        part++;
+                    }
+                    buffer[3+(x*4)+width*4*y+(width*4*height)*l]>>=1;
+                }
+            }
+        }
+    }
+    voxelParticles->upload();
+    texArray.unbind(0);
+    //std::cout<<"---------------------------------------------------------------------"<<std::endl;
+    delete[] buffer;
+    return voxelParticles;
 }
 
 Model* Model::createSphere(float radius,int stacks,int slices)

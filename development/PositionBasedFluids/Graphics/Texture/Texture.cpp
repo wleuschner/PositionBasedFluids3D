@@ -36,7 +36,7 @@ void Texture::createRenderImage(unsigned int w,unsigned int h)
     this->width = w;
     this->height = h;
 
-    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA,w,h,0,GL_RGBA,GL_FLOAT,0);
+    glTexImage2D(GL_TEXTURE_2D,0,GL_RGBA32UI,w,h,0,GL_RGBA_INTEGER,GL_UNSIGNED_INT,0);
     glSamplerParameteri(sampler,GL_TEXTURE_MIN_FILTER,GL_NEAREST);
     glSamplerParameteri(sampler,GL_TEXTURE_MAG_FILTER,GL_NEAREST);
     glSamplerParameteri(sampler,GL_TEXTURE_WRAP_S,GL_CLAMP_TO_EDGE);

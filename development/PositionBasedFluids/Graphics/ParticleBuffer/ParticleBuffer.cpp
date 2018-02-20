@@ -6,6 +6,11 @@ ParticleBuffer::ParticleBuffer()
     glGenBuffers(1,&id);
 }
 
+ParticleBuffer::~ParticleBuffer()
+{
+    glDeleteBuffers(1,&id);
+}
+
 void ParticleBuffer::bind()
 {
     glBindBuffer(GL_ARRAY_BUFFER,id);

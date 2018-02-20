@@ -84,7 +84,8 @@ private:
     float particleSize;
 
     Light light;
-    Model *sphere;
+    Model* sphere;
+    Model* armadillo;
     CubeMap* skyBox;
     VertexBuffer* cube;
     VertexBuffer* screenQuad;

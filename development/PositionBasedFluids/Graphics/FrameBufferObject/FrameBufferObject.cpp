@@ -37,7 +37,22 @@ void FrameBufferObject::attachColorImage(const Texture& image, unsigned int attN
     glFramebufferTexture(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+attNo,image.id,0);
 }
 
+void FrameBufferObject::attachColorArray(const TextureArray& image,unsigned int attNo)
+{
+    glFramebufferTexture(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+attNo,image.id,0);
+
+    /*for(unsigned int i=0;i<image.layers;i++)
+    {
+        glFramebufferTextureLayer(GL_FRAMEBUFFER,GL_COLOR_ATTACHMENT0+attNo+i,image.id,0,i);
+    }*/
+}
+
 void FrameBufferObject::attachDepthImage(const Texture& image)
+{
+    glFramebufferTexture(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,image.id,0);
+}
+
+void FrameBufferObject::attachDepthArray(const TextureArray& image)
 {
     glFramebufferTexture(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,image.id,0);
 }

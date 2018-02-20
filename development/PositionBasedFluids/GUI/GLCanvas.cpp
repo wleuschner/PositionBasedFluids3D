@@ -18,7 +18,8 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
     surface = false;
     smoothIter = 1;
-    particleSize = 0.005;
+    particleSize = 0.1;
+    //particleSize = 0.005;
     screenshotNo = 0;
     running = false;
     step = false;
@@ -27,7 +28,7 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     format = QSurfaceFormat::defaultFormat();
     format.setProfile(QSurfaceFormat::CoreProfile);
     format.setMajorVersion(4);
-    format.setMinorVersion(4);
+    format.setMinorVersion(5);
     setFormat(format);
     makeCurrent();
 
@@ -41,6 +42,7 @@ void GLCanvas::simulate()
     updateTimer.stop();
     if(running||step)
     {
+
         particles->bind();
         solver->solve();
 
@@ -86,9 +88,7 @@ void GLCanvas::initializeGL()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-    //glCullFace(GL_BACK);
-    //glEnable(GL_CULL_FACE);
-    glDisable(GL_CULL_FACE);
+    glEnable(GL_CULL_FACE);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -247,8 +247,8 @@ void GLCanvas::initializeGL()
     screenQuadVerts[1] = s2;
     screenQuadVerts[2] = s3;
     screenQuadVerts[3] = s4;
-    screenQuadVerts[4] = s5;
-    screenQuadVerts[5] = s6;
+    screenQuadVerts[5] = s5;
+    screenQuadVerts[4] = s6;
     screenQuad = new VertexBuffer();
     screenQuad->bind();
     screenQuad->upload(screenQuadVerts);
@@ -258,6 +258,16 @@ void GLCanvas::initializeGL()
     sphere = Model::createSphere(1.0,16,16);
 
     sphere->bind();
+
+    //Load Armadillo Model and voxelize
+    armadillo = new Model();
+    //armadillo->load("Resources/sphere.obj");
+    armadillo->load("Resources/Models/Armadillo.obj");
+    armadillo->bind();
+    particles = armadillo->voxelize(particleSize);
+    QOpenGLFramebufferObject::bindDefault();
+
+
 
     //Load SkyBox Vertices and Cubemap
     std::vector<Vertex> cubeVerts = {
@@ -333,6 +343,7 @@ void GLCanvas::initializeGL()
 
 
     particles = new ParticleBuffer();
+    particles = armadillo->voxelize(particleSize);
     reset();
 
     pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
@@ -343,6 +354,15 @@ void GLCanvas::initializeGL()
 
 void GLCanvas::paintGL()
 {
+    /*if(!running)
+    {
+        delete particles;
+        armadillo->bind();
+        particles = armadillo->voxelize(particleSize);
+        particles->upload();
+        QOpenGLFramebufferObject::bindDefault();
+    }*/
+    glViewport(0,0,width(),height());
     if(surface)
     {
         renderSurface();
@@ -351,6 +371,7 @@ void GLCanvas::paintGL()
     {
         renderParticles();
     }
+    //delete particles;
 }
 
 void GLCanvas::renderParticles()
@@ -671,7 +692,6 @@ void GLCanvas::renderSurface()
 
 void GLCanvas::resizeGL(int w, int h)
 {
-    glViewport(0,0,w,h);
     projection = glm::perspectiveFov(45.0f,(float)w,(float)h,0.1f,10.0f);
 }
 

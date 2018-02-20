@@ -2,7 +2,8 @@
 
 AABB::AABB()
 {
-
+    max = glm::vec3(0.0,0.0,0.0);
+    min = glm::vec3(0.0,0.0,0.0);
 }
 
 AABB::AABB(const glm::vec3& min,const glm::vec3& max)

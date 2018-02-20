@@ -18,5 +18,6 @@ void VertexBuffer::bindBufferBase(unsigned int id)
 
 void VertexBuffer::upload(const std::vector<Vertex>& vertices)
 {
+    bind();
     glBufferData(GL_ARRAY_BUFFER,vertices.size()*sizeof(Vertex),(void*)vertices.data(),GL_STATIC_DRAW);
 }

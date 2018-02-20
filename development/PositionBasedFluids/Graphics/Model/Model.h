@@ -9,6 +9,8 @@
 #include"../../Graphics/VertexBuffer/VertexBuffer.h"
 #include"../../Graphics/IndexBuffer/IndexBuffer.h"
 #include"../../Graphics/Material/Material.h"
+#include"../../Graphics/AABB/AABB.h"
+#include"../../Graphics/ParticleBuffer/ParticleBuffer.h"
 
 class Model
 {
@@ -19,6 +21,8 @@ public:
     bool release();
     void bind();
     void draw(ShaderProgram* shader);
+
+    ParticleBuffer* voxelize(float particleSize);
 
     Material getMaterial() const;
     void setMaterial(const Material &value);
@@ -41,6 +45,10 @@ private:
     bool createIndex();
 
     std::string name;
+
+    static ShaderProgram* voxelProgram;
+
+    AABB aabb;
 
     Material material;
     std::vector<unsigned int> indices;

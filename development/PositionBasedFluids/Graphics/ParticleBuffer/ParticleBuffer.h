@@ -7,6 +7,7 @@ class ParticleBuffer
 {
 public:
     ParticleBuffer();
+    ~ParticleBuffer();
     void bind();
     void addParticle(Particle particle);
     void upload();
