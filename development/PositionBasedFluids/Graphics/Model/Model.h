@@ -22,12 +22,15 @@ public:
     void bind();
     void draw(ShaderProgram* shader);
 
-    ParticleBuffer* voxelize(float particleSize);
+    ParticleBuffer* voxelize(float particleSize,bool solid);
 
     Material getMaterial() const;
     void setMaterial(const Material &value);
     std::vector<Vertex>& getVertices();
     std::vector<unsigned int>& getIndices();
+
+    void setModelMat(const glm::mat4& mat);
+    const glm::mat4& getModelMat();
 
 
     //Primitives
@@ -49,6 +52,7 @@ private:
     static ShaderProgram* voxelProgram;
 
     AABB aabb;
+    glm::mat4 modelMat;
 
     Material material;
     std::vector<unsigned int> indices;

@@ -20,6 +20,8 @@ class GLCanvas : public QOpenGLWidget
     Q_OBJECT
 public:
     GLCanvas(QWidget* parent=0);
+    void loadModel(QString fileName);
+
 protected:
     void initializeGL();
     void paintGL();
@@ -78,6 +80,7 @@ private:
     ShaderProgram* smoothProgram;
     ShaderProgram* thicknessProgram;
     ShaderProgram* surfaceProgram;
+    ShaderProgram* solidProgram;
     ParticleBuffer* particles;
     unsigned int vao;
 
@@ -85,7 +88,7 @@ private:
 
     Light light;
     Model* sphere;
-    Model* armadillo;
+    std::vector<Model*> models;
     CubeMap* skyBox;
     VertexBuffer* cube;
     VertexBuffer* screenQuad;

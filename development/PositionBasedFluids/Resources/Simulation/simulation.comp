@@ -10,6 +10,9 @@ struct Particle
     float lambda;
     float mass;
     float density;
+    float fluid;
+    float solid;
+    float gas;
 
     vec3 pos;
     vec3 vel;
@@ -112,7 +115,7 @@ void main()
     //Apply external forces
     case 0:
         {
-            particlesFront[gId].vel += timestep*vec3(0.0,-9.81,0.0);
+            particlesFront[gId].vel += timestep*vec3(0.0,-9.81,0.0)*particlesFront[gId].fluid;
             particlesFront[gId].tempPos = particlesFront[gId].pos + timestep*particlesFront[gId].vel;
             break;
         }
@@ -273,10 +276,10 @@ void main()
                     {
                         if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
-                            density += kernelPoly6(p.tempPos-n.pos);
-                            vec3 grad = gradSpikey(p.tempPos-n.pos);
+                            density += kernelPoly6(p.tempPos-n.pos)*n.fluid*p.fluid;
+                            vec3 grad = gradSpikey(p.tempPos-n.pos)*n.fluid*p.fluid;
                             gradSum1 += grad;
-                            grad = invRestDensity*-gradSpikey(p.tempPos-n.pos);
+                            grad = (invRestDensity*-gradSpikey(p.tempPos-n.pos))*n.fluid*p.fluid;
                             gradSum2 += dot(grad,grad);
                         }
                     }
@@ -304,7 +307,7 @@ void main()
                         if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
                             float sCorr = -corrConst*pow(kernelPoly6(p.tempPos-n.pos)/kernelPoly6(vec3(kernelSupport*corrDist,0.0,0.0)),corrExp);
-                            displacement += (p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos);
+                            displacement += ((p.lambda+n.lambda+sCorr)*gradSpikey(p.tempPos-n.pos))*n.fluid*p.fluid;
                         }
                     }
                 }
@@ -323,7 +326,7 @@ void main()
 
 
 
-            /*neighborInteraction(gId,p);
+            neighborInteraction(gId,p);
 
             for(uint i=0;i<9;i++)
             {
@@ -343,16 +346,18 @@ void main()
                                 {
                                     float t = sqrt(rSumSquared-f);
                                     float corr = (d-t);
-                                    corr = min(corr,minDist);
-                                    tempDispl = p.pos+(corr*n1)-p.tempPos;
-                                    minDist=corr;
+                                    minDist = min(corr,minDist);
+                                    //if(n.solid==1.0&&p.fluid==1.0)
+                                    {
+                                        tempDispl = tempDispl+(p.fluid*n.solid*(p.pos+(minDist*n1)-p.tempPos-tempDispl));
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-            p.displacement = tempDispl;*/
+            p.displacement = tempDispl;
             particles[gId] = checkBBoxCollision(p);
             break;
         }
@@ -383,7 +388,7 @@ void main()
                     {
                         if(dot(pf.tempPos-n.pos,pf.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
-                            curl += cross(n.vel-pf.vel,gradSpikey(pf.tempPos-n.pos));
+                            curl += cross(n.vel-pf.vel,gradSpikey(pf.tempPos-n.pos))*n.fluid;
                         }
                     }
                 }
@@ -392,7 +397,7 @@ void main()
             if(dot(curl,curl)>0.0)
             {
                 vec3 fvort = cfmRegularization*cross(normalize(curl),curl);
-                particlesFront[gId].vel += timestep*fvort;
+                particlesFront[gId].vel += timestep*fvort*particlesFront[gId].fluid;
             }
 
             for(uint i=0;i<9;i++)
@@ -404,13 +409,13 @@ void main()
                     {
                         if(dot(pf.tempPos-n.pos,pf.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
-                            velAccum += (n.vel-pf.vel)*kernelPoly6(pf.tempPos-n.pos);
+                            velAccum += ((n.vel-pf.vel)*kernelPoly6(pf.tempPos-n.pos))*n.fluid;
                         }
                     }
                 }
             }
 
-            particlesFront[gId].vel += artVisc*velAccum;
+            particlesFront[gId].vel += artVisc*velAccum*particlesFront[gId].fluid;
             particlesFront[gId].pos  = pf.tempPos;
             break;
         }

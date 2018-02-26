@@ -6,7 +6,7 @@ class Particle
 {
 public:
     Particle();
-    Particle(int index,glm::vec3 pos,glm::vec3 vel,float mass,float density);
+    Particle(int index,glm::vec3 pos,glm::vec3 vel,float mass,float density,bool solid);
     Particle(glm::vec3 pos,glm::vec3 vel,float mass,float density);
     Particle(glm::vec3 pos);
     unsigned int index; //0
@@ -14,7 +14,10 @@ public:
     float lambda; //8
     float mass; //12
     float density; //16
-    float pad[3]; //20
+    float fluid; //20
+    float solid; //24
+    float gas; //28
+    //float pad[3]; //24
 
     glm::vec3 pos; //20
     float posPad;

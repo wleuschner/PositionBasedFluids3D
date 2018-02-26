@@ -30,8 +30,8 @@ set(RES_FILES
    ${RES_FILES}
 )
 
-QT5_WRAP_UI(QT_HEADER_FORM GUI/MainWindow.ui)
-QT5_WRAP_CPP(QT_HEADER_MOC GUI/MainWindow.h GUI/GLCanvas.h)
+QT5_WRAP_UI(QT_HEADER_FORM GUI/MainWindow.ui GUI/PlacementDialog.ui)
+QT5_WRAP_CPP(QT_HEADER_MOC GUI/MainWindow.h GUI/PlacementDialog.h GUI/GLCanvas.h)
 
 
 add_executable(${PROJECT_NAME} ${RES_FILES} ${SOURCE} ${HEADERS} ${QT_HEADER_FORM} ${QT_HEADER_MOC})

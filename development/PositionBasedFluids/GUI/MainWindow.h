@@ -12,6 +12,8 @@ public:
 protected slots:
     void loadParameters();
     void saveParameters();
+
+    void loadModel();
 private:
     Ui::MainWindow ui;
 };

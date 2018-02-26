@@ -25,6 +25,13 @@ void CubeMap::bind(unsigned int texUnit)
     glBindSampler(texUnit,sampler);
 }
 
+void CubeMap::unbind(unsigned int texUnit)
+{
+    glActiveTexture(GL_TEXTURE0+texUnit);
+    glBindTexture(GL_TEXTURE_CUBE_MAP,0);
+    glBindSampler(texUnit,0);
+}
+
 void CubeMap::upload_side(unsigned int side,unsigned int width,unsigned int height,void* data)
 {
     glTexImage2D(side,0,GL_RGBA,width,height,0,GL_BGRA,GL_UNSIGNED_BYTE,data);

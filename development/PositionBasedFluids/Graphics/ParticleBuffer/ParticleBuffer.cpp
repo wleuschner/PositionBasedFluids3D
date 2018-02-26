@@ -19,7 +19,34 @@ void ParticleBuffer::bind()
 
 void ParticleBuffer::addParticle(Particle particle)
 {
+    particle.index = getNumParticles()+1;
     particles.push_back(particle);
+}
+
+void ParticleBuffer::syncGPU()
+{
+    bind();
+    Particle* data = (Particle*)glMapBuffer(GL_ARRAY_BUFFER,GL_READ_ONLY);
+    unsigned int parts = particles.size();
+    particles.clear();
+    for(unsigned int i=0;i<parts;i++)
+    {
+        particles.push_back(data[i]);
+    }
+    upload();
+}
+
+void ParticleBuffer::merge(const ParticleBuffer& b2)
+{
+    unsigned int offset = getNumParticles();
+    bind();
+    for(unsigned int i=0;i<b2.particles.size();i++)
+    {
+        Particle p = b2.particles[i];
+        p.index = offset+i;
+        addParticle(p);
+    }
+    upload();
 }
 
 void ParticleBuffer::upload()

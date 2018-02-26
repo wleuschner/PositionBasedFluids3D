@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.8)
 
 add_subdirectory("Surface")
 add_subdirectory("Particles")
+add_subdirectory("Solid")
 
 set(RES_FILES
    ${RES_FILES}

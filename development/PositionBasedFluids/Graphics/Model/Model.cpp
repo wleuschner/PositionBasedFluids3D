@@ -12,6 +12,7 @@ ShaderProgram* Model::voxelProgram = NULL;
 
 Model::Model()
 {
+    this->modelMat = glm::mat4();
     if(voxelProgram==NULL)
     {
         voxelProgram = new ShaderProgram();
@@ -139,6 +140,16 @@ std::vector<unsigned int>& Model::getIndices()
     return indices;
 }
 
+void Model::setModelMat(const glm::mat4& mat)
+{
+    this->modelMat = mat;
+}
+
+const glm::mat4& Model::getModelMat()
+{
+    return this->modelMat;
+}
+
 bool Model::createVBO()
 {
     vbo = new VertexBuffer();
@@ -168,36 +179,28 @@ void Model::setMaterial(const Material &value)
 void Model::draw(ShaderProgram* shader)
 {
     bind();
-    shader->setAttribute("vertex",GL_FLOAT,0,3,sizeof(Vertex));
-    shader->enableAttribute("vertex");
-
-    shader->setAttribute("normal",GL_FLOAT,sizeof(float)*3,3,sizeof(Vertex));
-    shader->enableAttribute("normal");
-
-    shader->setAttribute("uv",GL_FLOAT,sizeof(float)*6,2,sizeof(Vertex));
-    shader->enableAttribute("uv");
 
     glm::vec3 ambient = material.getAmbient();
     glm::vec3 diffuse = material.getDiffuse();
     glm::vec3 specular = material.getSpecular();
     float shininess = material.getShininess();
 
-    shader->uploadVec3("material.amb",ambient);
-    shader->uploadVec3("material.dif",diffuse);
-    shader->uploadVec3("material.spec",specular);
-    shader->uploadScalar("material.shininess",shininess);
+    //shader->uploadVec3("material.amb",ambient);
+    //shader->uploadVec3("material.dif",diffuse);
+    //shader->uploadVec3("material.spec",specular);
+    //shader->uploadScalar("material.shininess",shininess);
 
 
     glDrawElements(GL_TRIANGLES,indices.size(),GL_UNSIGNED_INT,(void*)0);
 }
 
-ParticleBuffer* Model::voxelize(float particleSize)
+ParticleBuffer* Model::voxelize(float particleSize,bool solid)
 {
     glm::vec3 ext = aabb.getExtent();
 
-    unsigned int layers = ceil(ext.z/(particleSize*32*4));
-    unsigned int width = ceil(ext.x/particleSize);
-    unsigned int height = ceil(ext.y/particleSize);
+    unsigned int layers = ceil(ext.z/(particleSize*2*32*4));
+    unsigned int width = ceil(ext.x/(particleSize*2));
+    unsigned int height = ceil(ext.y/(particleSize*2));
 
     glm::mat4 orthProj = glm::ortho(-ext.x/2,ext.x/2,-ext.y/2,ext.y/2);
     glm::mat4 pv = orthProj*glm::translate(glm::mat4(),glm::vec3(-aabb.getCenter().x,-aabb.getCenter().y,aabb.min.z));
@@ -268,10 +271,10 @@ ParticleBuffer* Model::voxelize(float particleSize)
                 {
                     if(buffer[(x*4)+width*4*y+(width*4*height)*l]&1)
                     {
-                        float xp = aabb.min.x+x*particleSize;
-                        float yp = aabb.min.y+y*particleSize;
-                        float zp = aabb.min.z+l*32*4*particleSize+d*particleSize;
-                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        float xp = aabb.min.x+x*particleSize*2;
+                        float yp = aabb.min.y+y*particleSize*2;
+                        float zp = aabb.min.z+l*32*4*particleSize+d*particleSize*2;
+                        voxelParticles->addParticle(Particle(part,modelMat*glm::vec4((glm::vec3(xp,yp,zp)-glm::vec3(-aabb.getCenter().x,-aabb.getCenter().y,aabb.min.z+ext.z/2)),1.0),glm::vec3(0.0,0.0,0.0),1.0,0.0,solid));
                         part++;
                     }
                     buffer[(x*4)+width*4*y+(width*4*height)*l]>>=1;
@@ -282,10 +285,10 @@ ParticleBuffer* Model::voxelize(float particleSize)
 
                     if(buffer[1+(x*4)+width*4*y+(width*4*height)*l]&1)
                     {
-                        float xp = aabb.min.x+x*particleSize;
-                        float yp = aabb.min.y+y*particleSize;
-                        float zp = aabb.min.z+l*32*4*particleSize+(d+32)*particleSize;
-                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        float xp = aabb.min.x+x*particleSize*2;
+                        float yp = aabb.min.y+y*particleSize*2;
+                        float zp = aabb.min.z+l*32*4*particleSize+(d+32)*particleSize*2;
+                        voxelParticles->addParticle(Particle(part,modelMat*glm::vec4((glm::vec3(xp,yp,zp)-glm::vec3(-aabb.getCenter().x,-aabb.getCenter().y,aabb.min.z+ext.z/2)),1.0),glm::vec3(0.0,0.0,0.0),1.0,0.0,solid));
                         part++;
                     }
                     buffer[1+(x*4)+width*4*y+(width*4*height)*l]>>=1;
@@ -296,10 +299,10 @@ ParticleBuffer* Model::voxelize(float particleSize)
 
                     if(buffer[2+(x*4)+width*4*y+(width*4*height)*l]&1)
                     {
-                        float xp = aabb.min.x+x*particleSize;
-                        float yp = aabb.min.y+y*particleSize;
-                        float zp = aabb.min.z+l*32*4*particleSize+(d+64)*particleSize;
-                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        float xp = aabb.min.x+x*particleSize*2;
+                        float yp = aabb.min.y+y*particleSize*2;
+                        float zp = aabb.min.z+l*32*4*particleSize+(d+64)*particleSize*2;
+                        voxelParticles->addParticle(Particle(part,modelMat*glm::vec4((glm::vec3(xp,yp,zp)-glm::vec3(-aabb.getCenter().x,-aabb.getCenter().y,aabb.min.z+ext.z/2)),1.0),glm::vec3(0.0,0.0,0.0),1.0,0.0,solid));
                         part++;
                     }
                     buffer[2+(x*4)+width*4*y+(width*4*height)*l]>>=1;
@@ -310,10 +313,10 @@ ParticleBuffer* Model::voxelize(float particleSize)
 
                     if(buffer[3+(x*4)+width*4*y+(width*4*height)*l]&1)
                     {
-                        float xp = aabb.min.x+x*particleSize;
-                        float yp = aabb.min.y+y*particleSize;
-                        float zp = aabb.min.z+l*32*4*particleSize+(d+96)*particleSize;
-                        voxelParticles->addParticle(Particle(part,glm::vec3(xp,yp,zp),glm::vec3(0.0,0.0,0.0),1.0,1.0));
+                        float xp = aabb.min.x+x*particleSize*2;
+                        float yp = aabb.min.y+y*particleSize*2;
+                        float zp = aabb.min.z+l*32*4*particleSize+(d+96)*particleSize*2;
+                        voxelParticles->addParticle(Particle(part,modelMat*glm::vec4((glm::vec3(xp,yp,zp)-glm::vec3(-aabb.getCenter().x,-aabb.getCenter().y,aabb.min.z+ext.z/2)),1.0),glm::vec3(0.0,0.0,0.0),1.0,0.0,solid));
                         part++;
                     }
                     buffer[3+(x*4)+width*4*y+(width*4*height)*l]>>=1;

@@ -23,6 +23,7 @@ uniform float fy;
 uniform LightSource light;
 uniform vec4 eye;
 
+flat in float solidFrag;
 in vec2 fragTexCoord;
 out vec4 fragColor;
 
@@ -40,6 +41,10 @@ void main()
     vec2 dxTex = vec2(1.0,1.0)/textureSize(depthMap,0);
 
     float depth = texture(depthMap,fragTexCoord).x;
+    if(solidFrag==1.0)
+    {
+        discard;
+    }
     if(depth>=1.0)
     {
         fragColor = vec4(texture(background,fragTexCoord).xyz,1.0);

@@ -14,11 +14,13 @@
 #include"../Graphics/Texture/Texture.h"
 #include"../Graphics/FrameBufferObject/FrameBufferObject.h"
 
+#include"PlacementDialog.h"
+
 GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
 {
     surface = false;
     smoothIter = 1;
-    particleSize = 0.1;
+    particleSize = 0.03;
     //particleSize = 0.005;
     screenshotNo = 0;
     running = false;
@@ -42,7 +44,7 @@ void GLCanvas::simulate()
     updateTimer.stop();
     if(running||step)
     {
-
+        makeCurrent();
         particles->bind();
         solver->solve();
 
@@ -224,6 +226,28 @@ void GLCanvas::initializeGL()
     }
     particleProgram->bind();
 
+    //Load Solid Shaders
+    Shader solidVert(GL_VERTEX_SHADER,"Resources/Effects/Solid/solid.vert");
+    if(!solidVert.compile())
+    {
+        std::cout<<solidVert.compileLog().c_str()<<std::endl;
+    }
+
+    Shader solidFrag(GL_FRAGMENT_SHADER,"Resources/Effects/Solid/solid.frag");
+    if(!solidFrag.compile())
+    {
+        std::cout<<solidFrag.compileLog().c_str()<<std::endl;
+    }
+
+    solidProgram = new ShaderProgram();
+    solidProgram->attachShader(solidVert);
+    solidProgram->attachShader(solidFrag);
+    if(!solidProgram->link())
+    {
+        std::cout<<solidProgram->linkLog().c_str()<<std::endl;
+    }
+    solidProgram->bind();
+
     //Create Light
     light = Light(glm::vec3(20.0,20.0,0.0));
 
@@ -260,11 +284,11 @@ void GLCanvas::initializeGL()
     sphere->bind();
 
     //Load Armadillo Model and voxelize
-    armadillo = new Model();
+    //armadillo = new Model();
     //armadillo->load("Resources/sphere.obj");
-    armadillo->load("Resources/Models/Armadillo.obj");
-    armadillo->bind();
-    particles = armadillo->voxelize(particleSize);
+    //armadillo->load("Resources/Models/Armadillo.obj");
+    //armadillo->bind();
+    //particles = armadillo->voxelize(particleSize);
     QOpenGLFramebufferObject::bindDefault();
 
 
@@ -343,8 +367,12 @@ void GLCanvas::initializeGL()
 
 
     particles = new ParticleBuffer();
-    particles = armadillo->voxelize(particleSize);
+    //ParticleBuffer* armadilloParts;
+    //armadilloParts = armadillo->voxelize(particleSize);
     reset();
+    //particles->merge(*armadilloParts);
+
+    //delete armadilloParts;
 
     pbf = new PBFSolver(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)viscKernel,0.08,4);
     pbfGpu = new PBFSolverGPU(particles->getParticles(),(AbstractKernel*)densityKernel,(AbstractKernel*)gradKernel,(AbstractKernel*)gradKernel,0.08,4);
@@ -354,14 +382,6 @@ void GLCanvas::initializeGL()
 
 void GLCanvas::paintGL()
 {
-    /*if(!running)
-    {
-        delete particles;
-        armadillo->bind();
-        particles = armadillo->voxelize(particleSize);
-        particles->upload();
-        QOpenGLFramebufferObject::bindDefault();
-    }*/
     glViewport(0,0,width(),height());
     if(surface)
     {
@@ -401,11 +421,20 @@ void GLCanvas::renderParticles()
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(4);
+    glVertexAttribPointer(5,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)20);
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(6,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)24);
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)28);
+    glEnableVertexAttribArray(7);
 
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(3,1);
     glVertexAttribDivisor(4,1);
+    glVertexAttribDivisor(5,1);
+    glVertexAttribDivisor(6,1);
+    glVertexAttribDivisor(7,1);
 
     particleProgram->bind();
     view = camera.getView();
@@ -420,6 +449,7 @@ void GLCanvas::renderParticles()
     particleProgram->uploadVec3("cPos",camera.getPosition());
     particleProgram->uploadLight("light0",light,view);
     glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
+
 }
 
 void GLCanvas::renderSurface()
@@ -445,7 +475,6 @@ void GLCanvas::renderSurface()
         std::cout<<"FBO incomplete"<<std::endl;
     }
 
-    //glDepthMask(GL_FALSE);
     glm::mat4 viewCube = camera.getRotMat();
     glm::mat4 modelViewCube = viewCube*model;
     glm::mat4 pvmCube = projection*modelViewCube;
@@ -460,12 +489,48 @@ void GLCanvas::renderSurface()
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(3,0);
     glVertexAttribDivisor(4,0);
+    glVertexAttribDivisor(5,0);
+    glVertexAttribDivisor(6,0);
+    glVertexAttribDivisor(7,0);
     Vertex::setVertexAttribs();
     Vertex::enableVertexAttribs();
     glDisableVertexAttribArray(3);
     glDisableVertexAttribArray(4);
+    glDisableVertexAttribArray(5);
+    glDisableVertexAttribArray(6);
+    glDisableVertexAttribArray(7);
+    glDepthMask(GL_FALSE);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glDepthMask(GL_TRUE);
+    //cube->bind();
+    //glClear();
+    CubeMap::unbind(0);
+    for(unsigned int i=0;i<models.size();i++)
+    {
+        glm::mat4 view = camera.getView();
+        glm::mat4 modelView = view*models[i]->getModelMat();
+        glm::mat4 pvm = projection*modelView;
+
+        glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*models[i]->getModelMat()))));
+
+        glBindBuffer(GL_ARRAY_BUFFER,0);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
+
+        solidProgram->bind();
+        models[i]->bind();
+        Vertex::setVertexAttribs();
+        Vertex::enableVertexAttribs();
+
+        solidProgram->uploadMat4("modelView",modelView);
+        solidProgram->uploadMat4("projection",projection);
+        solidProgram->uploadMat4("pvm",pvm);
+        solidProgram->uploadMat4("view",view);
+        solidProgram->uploadMat3("normalMatrix",normalMatrix);
+        solidProgram->uploadLight("light0",light,view);
+        glDrawElements(GL_TRIANGLES,models[i]->getIndices().size(),GL_UNSIGNED_INT,(void*)0);
+        //models[i]->draw(solidProgram);
+        glFinish();
+    }
     fbo4.unbind();
 
     //sphere->bind();
@@ -511,6 +576,12 @@ void GLCanvas::renderSurface()
     glEnableVertexAttribArray(3);
     glVertexAttribPointer(4,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)16);
     glEnableVertexAttribArray(4);
+    glVertexAttribPointer(5,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)20);
+    glEnableVertexAttribArray(5);
+    glVertexAttribPointer(6,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)24);
+    glEnableVertexAttribArray(6);
+    glVertexAttribPointer(7,1,GL_FLOAT,GL_FALSE,sizeof(Particle),(void*)28);
+    glEnableVertexAttribArray(7);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
     //glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
     fbo.unbind();
@@ -647,11 +718,17 @@ void GLCanvas::renderSurface()
     glVertexAttribDivisor(1,0);
     glVertexAttribDivisor(3,0);
     glVertexAttribDivisor(4,0);
+    glVertexAttribDivisor(5,0);
+    glVertexAttribDivisor(6,0);
+    glVertexAttribDivisor(7,0);
     glEnableVertexAttribArray(0);
     glEnableVertexAttribArray(1);
     glEnableVertexAttribArray(2);
     glEnableVertexAttribArray(3);
     glEnableVertexAttribArray(4);
+    glEnableVertexAttribArray(5);
+    glEnableVertexAttribArray(6);
+    glEnableVertexAttribArray(7);
     glDrawArrays(GL_POINTS,0,particles->getNumParticles());
 
     glDisable(GL_BLEND);
@@ -822,12 +899,42 @@ void GLCanvas::reset()
                 //particles->addParticle(Particle(cc,glm::vec3(x/5.0-10,y/5.0,z/5.0),glm::vec3(0.0,0.0,0.0),1.0,1.0));
                 //cc++;
 
-                particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+ppu)/(ppu*2.0)),-0.5+((y+ppu)/(ppu*2.0)),-0.5+((z+ppu)/(ppu*2.0))),glm::vec3(0.0,0.0,0.0),1.0,0.0));
+                particles->addParticle(Particle(cc,glm::vec3(-0.5+((x+ppu)/(ppu*2.0)),-0.5+((y+ppu)/(ppu*2.0)),-0.5+((z+ppu)/(ppu*2.0))),glm::vec3(0.0,0.0,0.0),1.0,0.0,false));
                 cc++;
             }
         }
     }
     particles->upload();
+}
+
+void GLCanvas::loadModel(QString fileName)
+{
+    PlacementDialog dialog;
+    if(dialog.exec()==QDialog::Accepted)
+    {
+        makeCurrent();
+        Model* model=new Model();
+        model->load(fileName.toStdString());
+        glm::vec3 transl = dialog.getDisplacement();
+        bool solid = dialog.isSolid();
+        model->setModelMat(glm::translate(glm::mat4(),transl));
+        ParticleBuffer *parts = model->voxelize(particleSize,solid);
+        QOpenGLFramebufferObject::bindDefault();
+        if(gpu)
+        {
+            particles->syncGPU();
+        }
+        particles->merge(*parts);
+        if(solid)
+        {
+            models.push_back(model);
+        }
+        else
+        {
+            delete model;
+        }
+        delete parts;
+    }
 }
 
 void GLCanvas::setNumIterations(int val)

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>611</height>
+    <height>613</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -432,6 +432,8 @@
      <string>Menu</string>
     </property>
     <addaction name="action_Reset"/>
+    <addaction name="action_Load_Model"/>
+    <addaction name="separator"/>
     <addaction name="action_Save_Parameters"/>
     <addaction name="action_Load_Parameters"/>
     <addaction name="actionQuit"/>
@@ -457,6 +459,16 @@
   <action name="action_Reset">
    <property name="text">
     <string>&amp;Reset</string>
+   </property>
+  </action>
+  <action name="action_Load_Model">
+   <property name="text">
+    <string>Load &amp;Model</string>
+   </property>
+  </action>
+  <action name="action_Load_Solid_Model">
+   <property name="text">
+    <string>Load &amp;Solid Model</string>
    </property>
   </action>
  </widget>

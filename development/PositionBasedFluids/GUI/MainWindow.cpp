@@ -7,6 +7,7 @@ MainWindow::MainWindow()
     ui.setupUi(this);
 
     connect(ui.action_Reset,SIGNAL(triggered()),ui.widget,SLOT(reset()));
+    connect(ui.action_Load_Model,SIGNAL(triggered()),this,SLOT(loadModel()));
     connect(ui.action_Load_Parameters,SIGNAL(triggered()),this,SLOT(loadParameters()));
     connect(ui.action_Save_Parameters,SIGNAL(triggered()),this,SLOT(saveParameters()));
 
@@ -90,5 +91,14 @@ void MainWindow::saveParameters()
             out.setVersion(QDataStream::Qt_5_0);
             out<<iter<<particleSize<<kernelSupport<<timestep<<restDensity<<artVisc<<artVort<<cfm<<corrConst<<corrDist<<corrExp;
         }
+    }
+}
+
+void MainWindow::loadModel()
+{
+    QString fileName = QFileDialog::getOpenFileName(this);
+    if(!fileName.isEmpty())
+    {
+        ui.widget->loadModel(fileName);
     }
 }

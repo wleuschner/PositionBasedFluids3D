@@ -12,6 +12,10 @@ layout (location=0) in vec3 pos;
 layout (location=1) in vec3 normal;
 layout (location=3) in vec3 ofs;
 layout (location=4) in float dens;
+layout (location=5) in float fluid;
+layout (location=6) in float solid;
+layout (location=7) in float gas;
+
 flat out float density;
 uniform float particleSize;
 uniform mat4 pvm;
@@ -30,14 +34,21 @@ void main()
 {
     vec4 diff;
     //More Than Resting Density RED
-    if(dens>0.0)
+    if(solid==0.0)
     {
-        diff = vec4(clamp(+dens/2.0,0.0,1.0),0.0,clamp(1.0-dens/2.0,0.0,1.0),1.0);
+        if(dens>0.0)
+        {
+            diff = vec4(clamp(+dens/2.0,0.0,1.0),0.0,clamp(1.0-dens/2.0,0.0,1.0),1.0);
+        }
+        //Less Than Resting Density GREEN
+        else
+        {
+            diff = vec4(0.0,clamp(-dens/2.0,0.0,1.0),clamp(1.0+dens/2.0,0.0,1.0),1.0);
+        }
     }
-    //Less Than Resting Density GREEN
     else
     {
-        diff = vec4(0.0,clamp(-dens/2.0,0.0,1.0),clamp(1.0+dens/2.0,0.0,1.0),1.0);
+        diff = vec4(0.0,0.0,0.0,1.0);
     }
     density = dens;
 

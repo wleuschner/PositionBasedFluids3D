@@ -14,7 +14,7 @@ void main()
 {
     //discard;
     //float slice = gl_Layer*particleSize*32*4;
-    uint z = uint(((VertexIn.pos.z))/particleSize);
+    uint z = uint(((VertexIn.pos.z))/(particleSize*2));
     //texture(sliceMap,vec3(gl_FragCoord.x,gl_FragCoord.y,gl_Layer))
     uvec4 c = uvec4(0);
 
