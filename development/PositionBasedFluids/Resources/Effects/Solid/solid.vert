@@ -10,11 +10,11 @@ struct LightSource
 
 layout (location=0) in vec3 pos;
 layout (location=1) in vec3 normal;
+layout (location=2) in vec2 uv;
 
 uniform mat4 pvm;
 uniform mat4 modelView;
 uniform mat3 normalMatrix;
-uniform vec3 cPos;
 uniform LightSource light;
 
 out Data

@@ -34,6 +34,12 @@ uniform float corrConst;
 uniform float corrDist;
 uniform float corrExp;
 uniform float particleSize;
+uniform float aabbMinX;
+uniform float aabbMinY;
+uniform float aabbMinZ;
+uniform float aabbMaxX;
+uniform float aabbMaxY;
+uniform float aabbMaxZ;
 
 uniform vec3 minOfs;
 uniform ivec3 dimSize;
@@ -123,15 +129,17 @@ void main()
     case 1:
         {
             Particle pf = particlesFront[gId];
-            float xPosF = (minOfs.x+pf.pos.x)/kernelSupport;
-            float yPosF = (minOfs.y+pf.pos.y)/kernelSupport;
-            float zPosF = (minOfs.z+pf.pos.z)/kernelSupport;
+            vec3 posF = (pf.pos-minOfs)/kernelSupport;
+            ivec3 pos = clamp(ivec3(floor(posF)),ivec3(0),dimSize.x-ivec3(1));
+            /*float xPosF = (pf.pos.x-minOfs.x)/kernelSupport;
+            float yPosF = (pf.pos.y-minOfs.y)/kernelSupport;
+            float zPosF = (pf.pos.z-minOfs.z)/kernelSupport;
 
             int xPos = clamp(int(floor(xPosF)),0,dimSize.x-1);
             int yPos = clamp(int(floor(yPosF)),0,dimSize.y-1);
-            int zPos = clamp(int(floor(zPosF)),0,dimSize.z-1);
+            int zPos = clamp(int(floor(zPosF)),0,dimSize.z-1);*/
 
-            uint b = xPos+(dimSize.y*(yPos+dimSize.x*zPos));
+            uint b = pos.x+(dimSize.x*(pos.y+dimSize.y*pos.z));
             particlesFront[gId].bucket = b;
             atomicAdd(histogram[b],1);
             break;
@@ -347,10 +355,7 @@ void main()
                                     float t = sqrt(rSumSquared-f);
                                     float corr = (d-t);
                                     minDist = min(corr,minDist);
-                                    //if(n.solid==1.0&&p.fluid==1.0)
-                                    {
-                                        tempDispl = tempDispl+(p.fluid*n.solid*(p.pos+(minDist*n1)-p.tempPos-tempDispl));
-                                    }
+                                    tempDispl = tempDispl+(p.fluid*n.solid*(p.pos+(minDist*n1)-p.tempPos-tempDispl));
                                 }
                             }
                         }
@@ -426,46 +431,46 @@ void main()
 
 Particle checkBBoxCollision(Particle p)
 {
-    if(dot((p.tempPos+p.displacement),vec3(0.0,1.0,0.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,1.0,0.0))+aabbMaxY<0.0)
     {
         vec3 n1 = vec3(0.0,1.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5f+dot(n1,-1.5*n1))/dot(n1,r);
+        float t = -(aabbMaxY+dot(n1,-aabbMaxY*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))-aabbMinY<0.0)
     {
         vec3 n1 = vec3(0.0,-1.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
+        float t = -(-aabbMinY+dot(n1,+aabbMinY*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))-aabbMinX<0.0)
     {
         vec3 n1 = vec3(-1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
+        float t = -(-aabbMinX+dot(n1,+aabbMinX*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.5f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+aabbMaxX<0.0)
     {
         vec3 n1 = vec3(1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.5+dot(n1,-1.5*n1))/dot(n1,r);
+        float t = -(aabbMaxX+dot(n1,-aabbMaxX*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))-aabbMinZ<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,-1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
+        float t = -(-aabbMinZ+dot(n1,+aabbMinZ*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+aabbMaxZ<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
+        float t = -(aabbMaxZ+dot(n1,-aabbMaxZ*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
     return p;
@@ -473,77 +478,56 @@ Particle checkBBoxCollision(Particle p)
 
 void neighborInteraction(uint gId, Particle p)
 {
-    int xPos = int(clamp(int((floor((minOfs.x+p.tempPos.x)/kernelSupport))),0,dimSize.x-1));
-    int yPos = int(clamp(int((floor((minOfs.y+p.tempPos.y)/kernelSupport))),0,dimSize.y-1));
-    int zPos = int(clamp(int((floor((minOfs.z+p.tempPos.z)/kernelSupport))),0,dimSize.z-1));
+    vec3 posF = (p.pos-minOfs)/kernelSupport;
+    ivec3 pos = clamp(ivec3(floor(posF)),ivec3(0),dimSize.x-ivec3(1));
 
     int xPosBegin,xPosEnd;
     int yPosBegin,yPosEnd;
     int zPosBegin,zPosEnd;
 
-    xPosBegin = max(xPos-1,0);
-    xPosEnd   = min(xPos+1,dimSize.x-1);
+    ivec3 posBegin = max(pos-ivec3(1),0);
+    ivec3 posEnd = min(pos+ivec3(1),dimSize-ivec3(1));
 
-    yPosBegin = max(yPos-1,0);
-    yPosEnd   = min(yPos+1,dimSize.y-1);
-
-    zPosBegin = max(zPos-1,0);
-    zPosEnd   = min(zPos+1,dimSize.z-1);
+    ivec2 posBeginEndX = ivec2(posBegin.x,posEnd.x);
 
     //Bottom
-    uint bottomLeftBack   = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPosBegin));
-    uint bottomRightBack   = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPosBegin));
+    ivec2 bottomBack = posBeginEndX+(ivec2(dimSize.x)*(ivec2(posBegin.y)+ivec2(dimSize.y)*ivec2(posBegin.z)));
+    beginIdx[0] = histogram[bottomBack.x];
+    endIdx[0] = histogram[bottomBack.y+1];
 
-    beginIdx[0] = histogram[bottomLeftBack];
-    endIdx[0] = histogram[bottomRightBack+1];
+    ivec2 bottomFront = posBeginEndX+(ivec2(dimSize.x)*(ivec2(posBegin.y)+ivec2(dimSize.y)*ivec2(posEnd.z)));
+    beginIdx[1] = histogram[bottomFront.x];
+    endIdx[1] = histogram[bottomFront.y+1];
 
-    uint bottomLeftFront  = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
-    uint bottomRightFront  = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPosEnd));
-
-    beginIdx[1] = histogram[bottomLeftFront];
-    endIdx[1] = histogram[bottomRightFront+1];
-
-    uint bottomLeftCenter = xPosBegin+(dimSize.x*(yPosBegin+dimSize.y*zPos));
-    uint bottomRightCenter = xPosEnd+(dimSize.x*(yPosBegin+dimSize.y*zPos));
-
-    beginIdx[2] = histogram[bottomLeftCenter];
-    endIdx[2] = histogram[bottomRightCenter+1];
+    ivec2 bottomCenter = posBeginEndX+(ivec2(dimSize.x)*(ivec2(posBegin.y)+ivec2(dimSize.y)*ivec2(pos.z)));
+    beginIdx[2] = histogram[bottomCenter.x];
+    endIdx[2] = histogram[bottomCenter.y+1];
 
     //Top
-    uint topLeftBack = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
-    uint topRightBack = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosBegin));
+    ivec2 topBack = posBeginEndX+(ivec2(dimSize.x)*(ivec2(posEnd.y)+ivec2(dimSize.y)*ivec2(posBegin.z)));
+    beginIdx[3] = histogram[topBack.x];
+    endIdx[3] = histogram[topBack.y+1];
 
-    beginIdx[3] = histogram[topLeftBack];
-    endIdx[3] = histogram[topRightBack+1];
+    ivec2 topFront = posBeginEndX+(ivec2(dimSize.x)*(ivec2(posEnd.y)+ivec2(dimSize.y)*ivec2(posEnd.z)));
+    beginIdx[4] = histogram[topFront.x];
+    endIdx[4] = histogram[topFront.y+1];
 
-    uint topLeftFront = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
-    uint topRightFront = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPosEnd));
-
-    beginIdx[4] = histogram[topLeftFront];
-    endIdx[4] = histogram[topRightFront+1];
-    uint topLeftCenter = xPosBegin+(dimSize.x*(yPosEnd+dimSize.y*zPos));
-    uint topRightCenter = xPosEnd+(dimSize.x*(yPosEnd+dimSize.y*zPos));
-
-    beginIdx[5] = histogram[topLeftCenter];
-    endIdx[5] = histogram[topRightCenter+1];
+    ivec2 topCenter = posBeginEndX+(ivec2(dimSize.x)*(ivec2(posEnd.y)+ivec2(dimSize.y)*ivec2(pos.z)));
+    beginIdx[5] = histogram[topCenter.x];
+    endIdx[5] = histogram[topCenter.y+1];
 
     //Center
-    uint centerLeftBack = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosBegin));
-    uint centerRightBack = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosBegin));
+    ivec2 centerBack = posBeginEndX+(ivec2(dimSize.x)*(ivec2(pos.y)+ivec2(dimSize.y)*ivec2(posBegin.z)));
+    beginIdx[6] = histogram[centerBack.x];
+    endIdx[6] = histogram[centerBack.y+1];
 
-    beginIdx[6] = histogram[centerLeftBack];
-    endIdx[6] = histogram[centerRightBack+1];
+    ivec2 centerFront = posBeginEndX+(ivec2(dimSize.x)*(ivec2(pos.y)+ivec2(dimSize.y)*ivec2(posEnd.z)));
+    beginIdx[7] = histogram[centerFront.x];
+    endIdx[7] = histogram[centerFront.y+1];
 
-    uint centerLeftFront = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPosEnd));
-    uint centerRightFront = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPosEnd));
-
-    beginIdx[7] = histogram[centerLeftFront];
-    endIdx[7] = histogram[centerRightFront+1];
-
-    uint centerLeftCenter = xPosBegin+(dimSize.x*(yPos+dimSize.y*zPos));
-    uint centerRightCenter = xPosEnd+(dimSize.x*(yPos+dimSize.y*zPos));
-    beginIdx[8] = histogram[centerLeftCenter];
-    endIdx[8] = histogram[centerRightCenter+1];
+    ivec2 centerCenter = posBeginEndX+(ivec2(dimSize.x)*(ivec2(pos.y)+ivec2(dimSize.y)*ivec2(pos.z)));
+    beginIdx[8] = histogram[centerCenter.x];
+    endIdx[8] = histogram[centerCenter.y+1];
 }
 
 float checkParticleCollision(uint gId,Particle n,float minDist)

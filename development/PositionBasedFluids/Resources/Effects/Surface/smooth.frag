@@ -11,7 +11,7 @@ uniform mat4 view;
 uniform vec2 blurDir;
 
 in vec2 fragTexCoord;
-out float fragColor;
+layout(location=0) out float fragColor;
 
 /*
 float gaussianScale = 1.0;

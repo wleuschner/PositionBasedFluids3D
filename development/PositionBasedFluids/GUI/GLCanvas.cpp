@@ -483,7 +483,6 @@ void GLCanvas::renderSurface()
     skyBoxProgram->uploadMat4("pvm",pvmCube);
     skyBoxProgram->uploadInt("cube_texture",0);
     skyBox->bind(0);
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     cube->bind();
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
@@ -499,35 +498,53 @@ void GLCanvas::renderSurface()
     glDisableVertexAttribArray(5);
     glDisableVertexAttribArray(6);
     glDisableVertexAttribArray(7);
-    glDepthMask(GL_FALSE);
+    glClearColor(0.0,0.0,0.0,1.0);
+    glClearDepth(1.0);
+    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glDisable(GL_DEPTH_TEST);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    glDepthMask(GL_TRUE);
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
     //cube->bind();
     //glClear();
     CubeMap::unbind(0);
+
     for(unsigned int i=0;i<models.size();i++)
     {
         glm::mat4 view = camera.getView();
         glm::mat4 modelView = view*models[i]->getModelMat();
         glm::mat4 pvm = projection*modelView;
 
-        glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*models[i]->getModelMat()))));
+        glm::mat3 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*models[i]->getModelMat()))));
+
+
+        solidProgram->bind();
+
+        solidProgram->uploadMat4("modelView",modelView);
+        solidProgram->uploadMat4("pvm",pvm);
+        solidProgram->uploadMat3("normalMatrix",normalMatrix);
+        solidProgram->uploadLight("light0",light,view);
 
         glBindBuffer(GL_ARRAY_BUFFER,0);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
-
-        solidProgram->bind();
         models[i]->bind();
+        glVertexAttribDivisor(0,0);
+        glVertexAttribDivisor(1,0);
+        glVertexAttribDivisor(3,0);
+        glVertexAttribDivisor(4,0);
+        glVertexAttribDivisor(5,0);
+        glVertexAttribDivisor(6,0);
+        glVertexAttribDivisor(7,0);
         Vertex::setVertexAttribs();
         Vertex::enableVertexAttribs();
-
-        solidProgram->uploadMat4("modelView",modelView);
-        solidProgram->uploadMat4("projection",projection);
-        solidProgram->uploadMat4("pvm",pvm);
-        solidProgram->uploadMat4("view",view);
-        solidProgram->uploadMat3("normalMatrix",normalMatrix);
-        solidProgram->uploadLight("light0",light,view);
+        glDisableVertexAttribArray(3);
+        glDisableVertexAttribArray(4);
+        glDisableVertexAttribArray(5);
+        glDisableVertexAttribArray(6);
+        glDisableVertexAttribArray(7);
+        glDisable(GL_CULL_FACE);
         glDrawElements(GL_TRIANGLES,models[i]->getIndices().size(),GL_UNSIGNED_INT,(void*)0);
+        glEnable(GL_CULL_FACE);
         //models[i]->draw(solidProgram);
         glFinish();
     }

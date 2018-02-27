@@ -11,7 +11,7 @@ struct LightSource
 
 in vec3 eyeSpacePos;
 flat in float solidFrag;
-out vec4 fragColor;
+layout(location=0) out vec4 fragColor;
 
 uniform float particleSize;
 uniform mat4 modelView;

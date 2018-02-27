@@ -33,10 +33,10 @@ void PBFSolverGPU::init()
 
 void PBFSolverGPU::solve()
 {
-    AABB aabb = AABB(glm::vec3(-2.0,-2.0,-2.0),glm::vec3(2.0,2.0,2.0));
+    AABB aabb = AABB(glm::vec3(-2.0,-3.0,-2.0),glm::vec3(2.0,10.0,2.0));
     glm::ivec3 dimSize;
     const glm::vec3 ext = aabb.getExtent();
-    const glm::vec3 min = aabb.getCenter()-aabb.min;
+    const glm::vec3 min = aabb.min;
     dimSize.x = glm::max(std::ceil(ext.x/kernelSupport),1.0f);
     dimSize.y = glm::max(std::ceil(ext.y/kernelSupport),1.0f);
     dimSize.z = glm::max(std::ceil(ext.z/kernelSupport),1.0f);
@@ -88,6 +88,12 @@ void PBFSolverGPU::solve()
     computeProgram->uploadScalar("particleSize",particleSize);
     computeProgram->uploadUnsignedInt("nParticles",particles.size());
     computeProgram->uploadUnsignedInt("nBuckets",elems);
+    computeProgram->uploadScalar("aabbMaxX",aabb.max.x);
+    computeProgram->uploadScalar("aabbMaxY",aabb.max.y);
+    computeProgram->uploadScalar("aabbMaxZ",aabb.max.z);
+    computeProgram->uploadScalar("aabbMinX",aabb.min.x);
+    computeProgram->uploadScalar("aabbMinY",aabb.min.y);
+    computeProgram->uploadScalar("aabbMinZ",aabb.min.z);
 
     glm::ivec3 maxSize = computeProgram->getMaxWorkGroups();
 

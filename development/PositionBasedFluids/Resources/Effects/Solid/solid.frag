@@ -13,13 +13,11 @@ in Data
     vec4 color;
 } DataIn;
 
-uniform vec3 cPos;
-uniform mat4 view;
 uniform LightSource light;
 
-out vec4 fragColor;
+layout(location=0) out vec4 frag_colour;
 
 void main()
 {
-    fragColor = DataIn.color;
+    frag_colour = vec4(1.0,0.0,0.0,1.0);
 }

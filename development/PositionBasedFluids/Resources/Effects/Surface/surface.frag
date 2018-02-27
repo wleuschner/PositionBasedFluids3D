@@ -25,7 +25,7 @@ uniform vec4 eye;
 
 flat in float solidFrag;
 in vec2 fragTexCoord;
-out vec4 fragColor;
+layout(location=0) out vec4 fragColor;
 
 vec3 getEyePos(vec2 texCoord,float depth)
 {
