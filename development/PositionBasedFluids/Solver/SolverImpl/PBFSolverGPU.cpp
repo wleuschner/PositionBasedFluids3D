@@ -5,6 +5,7 @@
 #include<list>
 #include<iostream>
 #include<GL/glew.h>
+#include<glm/gtc/random.hpp>
 
 PBFSolverGPU::PBFSolverGPU(std::vector<Particle>& particles,AbstractKernel* densityKernel,AbstractKernel* gradKernel,AbstractKernel* viscKernel,float timestep,int iterations) : AbstractSolver(particles,densityKernel,gradKernel,viscKernel)
 {
@@ -31,19 +32,18 @@ void PBFSolverGPU::init()
 {
 }
 
-void PBFSolverGPU::solve()
+AABB PBFSolverGPU::solve(const AABB& aabb)
 {
-    AABB aabb = AABB(glm::vec3(-2.0,-3.0,-2.0),glm::vec3(2.0,10.0,2.0));
     glm::ivec3 dimSize;
     const glm::vec3 ext = aabb.getExtent();
     const glm::vec3 min = aabb.min;
-    dimSize.x = glm::max(std::ceil(ext.x/kernelSupport),1.0f);
-    dimSize.y = glm::max(std::ceil(ext.y/kernelSupport),1.0f);
-    dimSize.z = glm::max(std::ceil(ext.z/kernelSupport),1.0f);
+    dimSize.x = glm::max(std::floor(ext.x/kernelSupport+1),1.0f);
+    dimSize.y = glm::max(std::floor(ext.y/kernelSupport+1),1.0f);
+    dimSize.z = glm::max(std::floor(ext.z/kernelSupport+1),1.0f);
     unsigned int elems = dimSize.x*dimSize.y*dimSize.z;
 
     //Setup Compute Shader
-    std::vector<unsigned int> bufData((elems+(256-elems%256)));
+    std::vector<unsigned int> bufData((elems+(2048-elems%2048)));
 
     unsigned int histBuf;
     unsigned int ofsBuf;
@@ -57,19 +57,19 @@ void PBFSolverGPU::solve()
 
     glGenBuffers(1,&histBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,2,histBuf);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*(elems+(256-elems%256)),bufData.data(),GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*(elems+(1024-elems%1024)),bufData.data(),GL_DYNAMIC_DRAW);
 
     glGenBuffers(1,&ofsBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,3,ofsBuf);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*(elems+(256-elems%256)),bufData.data(),GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*(elems+(1024-elems%1024)),bufData.data(),GL_DYNAMIC_DRAW);
 
     glGenBuffers(1,&sumsBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,4,sumsBuf);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*256,bufData.data(),GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*1024,bufData.data(),GL_DYNAMIC_DRAW);
 
     glGenBuffers(1,&incrBuf);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER,5,incrBuf);
-    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*256,bufData.data(),GL_DYNAMIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER,sizeof(unsigned int)*1024,bufData.data(),GL_DYNAMIC_DRAW);
 
 
     computeProgram->bind();
@@ -88,12 +88,12 @@ void PBFSolverGPU::solve()
     computeProgram->uploadScalar("particleSize",particleSize);
     computeProgram->uploadUnsignedInt("nParticles",particles.size());
     computeProgram->uploadUnsignedInt("nBuckets",elems);
-    computeProgram->uploadScalar("aabbMaxX",aabb.max.x);
-    computeProgram->uploadScalar("aabbMaxY",aabb.max.y);
-    computeProgram->uploadScalar("aabbMaxZ",aabb.max.z);
-    computeProgram->uploadScalar("aabbMinX",aabb.min.x);
-    computeProgram->uploadScalar("aabbMinY",aabb.min.y);
-    computeProgram->uploadScalar("aabbMinZ",aabb.min.z);
+    computeProgram->uploadScalar("aabbMaxX",bounds.max.x);
+    computeProgram->uploadScalar("aabbMaxY",bounds.max.y);
+    computeProgram->uploadScalar("aabbMaxZ",bounds.max.z);
+    computeProgram->uploadScalar("aabbMinX",bounds.min.x);
+    computeProgram->uploadScalar("aabbMinY",bounds.min.y);
+    computeProgram->uploadScalar("aabbMinZ",bounds.min.z);
 
     glm::ivec3 maxSize = computeProgram->getMaxWorkGroups();
 
@@ -123,14 +123,14 @@ void PBFSolverGPU::solve()
 
 
     computeProgram->uploadUnsignedInt("taskId",2);
-    computeProgram->dispatch(ceil(elems/256.0),1,1,128,1,1);
+    computeProgram->dispatch(ceil(elems/1024.0),1,1,512,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
     glDeleteSync(syncObj);
 
     computeProgram->uploadUnsignedInt("taskId",10);
-    computeProgram->dispatch(1,1,1,ceil(elems/256.0),1,1);
+    computeProgram->dispatch(1,1,1,ceil(elems/1024.0),1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -138,7 +138,7 @@ void PBFSolverGPU::solve()
 
 
     computeProgram->uploadUnsignedInt("taskId",11);
-    computeProgram->dispatch(ceil(elems/256.0),1,1,256,1,1);
+    computeProgram->dispatch(ceil(elems/1024.0),1,1,1024,1,1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT|GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
     syncObj = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE,0);
     glClientWaitSync(syncObj,0,1000*1000*1000*2);
@@ -210,6 +210,27 @@ void PBFSolverGPU::solve()
     glDeleteBuffers(1,&ofsBuf);
     glDeleteBuffers(1,&sumsBuf);
     glDeleteBuffers(1,&incrBuf);
+
+}
+
+void PBFSolverGPU::setAABBMinX(float val)
+{
+    bounds.min.x = val;
+}
+
+void PBFSolverGPU::setAABBMaxX(float val)
+{
+    bounds.max.x = val;
+}
+
+void PBFSolverGPU::setAABBMinY(float val)
+{
+    bounds.min.y = val;
+}
+
+void PBFSolverGPU::setAABBMaxY(float val)
+{
+    bounds.max.y = val;
 }
 
 void PBFSolverGPU::setDensityKernel(int id)

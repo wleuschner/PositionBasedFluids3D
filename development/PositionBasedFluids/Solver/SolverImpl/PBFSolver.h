@@ -12,7 +12,12 @@ public:
 
 
     void init();
-    void solve();
+    AABB solve(const AABB& aabb);
+
+    void setAABBMinX(float val);
+    void setAABBMaxX(float val);
+    void setAABBMinY(float val);
+    void setAABBMaxY(float val);
 
     void setDensityKernel(int id);
     void setGradKernel(int id);

@@ -19,6 +19,13 @@ void Texture::bind(unsigned int texUnit)
     glBindSampler(texUnit,sampler);
 }
 
+void Texture::unbind(unsigned int texUnit)
+{
+    glActiveTexture(GL_TEXTURE0+texUnit);
+    glBindTexture(GL_TEXTURE_2D,0);
+    glBindSampler(texUnit,0);
+}
+
 void Texture::upload(unsigned int w,unsigned int h,void* data)
 {
     this->width = w;

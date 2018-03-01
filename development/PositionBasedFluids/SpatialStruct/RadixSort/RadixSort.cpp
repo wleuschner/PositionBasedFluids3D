@@ -11,7 +11,7 @@ RadixSort::RadixSort(std::vector<Particle>& particles,float cellSize,const AABB&
 void RadixSort::update()
 {
     const glm::vec3 ext = aabb.getExtent();
-    const glm::vec3 min = aabb.getCenter()-aabb.min;
+    const glm::vec3 min = aabb.getCenter()-glm::vec3(aabb.min);
     this->dimSize.x = glm::max(std::ceil(ext.x/cellSize),1.0f);
     this->dimSize.y = glm::max(std::ceil(ext.y/cellSize),1.0f);
     this->dimSize.z = glm::max(std::ceil(ext.z/cellSize),1.0f);
@@ -66,7 +66,7 @@ void RadixSort::update()
 std::list<unsigned int> RadixSort::find(const Particle &p)
 {
     std::list<unsigned int> result;
-    const glm::vec3 min = aabb.getCenter()-aabb.min;
+    const glm::vec3 min = aabb.getCenter()-glm::vec3(aabb.min);
 
 
     int xPos = glm::clamp((int)(std::floor((min.x+p.pos.x)/cellSize)),0,dimSize.x-1);

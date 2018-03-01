@@ -32,7 +32,7 @@ void PBFSolver::init()
     this->spatialHashMap->update();
 }
 
-void PBFSolver::solve()
+AABB PBFSolver::solve(const AABB& aabb)
 {
     std::vector<std::list<Particle>> neighbors(particles.size());
     std::vector<glm::vec3> displacement(particles.size());
@@ -220,6 +220,26 @@ void PBFSolver::solve()
         particles[p].pos  = particles[p].tempPos;
     }
     spatialHashMap->clear();
+}
+
+void PBFSolver::setAABBMinX(float val)
+{
+    bounds.min.x = val;
+}
+
+void PBFSolver::setAABBMaxX(float val)
+{
+    bounds.max.x = val;
+}
+
+void PBFSolver::setAABBMinY(float val)
+{
+    bounds.min.y = val;
+}
+
+void PBFSolver::setAABBMaxY(float val)
+{
+    bounds.max.y = val;
 }
 
 void PBFSolver::setDensityKernel(int id)

@@ -13,6 +13,7 @@ in vec3 eyeSpacePos;
 flat in float solidFrag;
 layout(location=0) out vec4 fragColor;
 
+uniform sampler2D bgDepth;
 uniform float particleSize;
 uniform mat4 modelView;
 uniform mat4 projection;
@@ -23,7 +24,8 @@ void main()
     vec3 N;
     N.xy = 2.0*gl_PointCoord-vec2(1.0,1.0);
     float r2 = dot(N.xy,N.xy);
-    if(r2>1.0||solidFrag==1.0)
+    float depth = texture(bgDepth,gl_FragCoord.xy).r;
+    if(r2>1.0||solidFrag==1.0||gl_FragCoord.z>depth)
     {
         discard;
     }

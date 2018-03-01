@@ -11,7 +11,7 @@ uniform mat4 view;
 uniform vec2 blurDir;
 
 in vec2 fragTexCoord;
-layout(location=0) out float fragColor;
+layout(location=0) out vec4 fragColor;
 
 /*
 float gaussianScale = 1.0;
@@ -70,16 +70,16 @@ float convolve(vec2 fragPos,vec2 dxTex)
     //for(int x=-1;x<=1;x++)
     for(int x=-1;x<=1;x++)
     {
-        float samp = texture(depthMap,fragPos+vec2(x*blurDir*dxTex),0).x;
+        float samp = gaussian[x+1]*texture(depthMap,fragPos+vec2(x*blurDir*dxTex),0).x;
         sum += samp;
     }
     //return 10.0;
-    return (gaussianScale*sum)/(3);
+    return (gaussianScale*sum);
 }
 
 void main()
 {
     vec2 dxTex = vec2(1.0,1.0)/textureSize(depthMap,0);
     float val = convolve(fragTexCoord,dxTex);
-    fragColor = val;
+    fragColor = vec4(val,val,val,val);
 }

@@ -18,6 +18,12 @@ MainWindow::MainWindow()
     connect(ui.spinBoxTimeStep,SIGNAL(valueChanged(double)),ui.widget,SLOT(setTimestep(double)));
     connect(ui.spinBoxRestDensity,SIGNAL(valueChanged(double)),ui.widget,SLOT(setRestDensity(double)));
 
+    connect(ui.scrollBarAABBMinX,SIGNAL(valueChanged(int)),ui.widget,SLOT(setAABBMinX(int)));
+    connect(ui.scrollBarAABBMaxX,SIGNAL(valueChanged(int)),ui.widget,SLOT(setAABBMaxX(int)));
+    connect(ui.scrollBarAABBMinY,SIGNAL(valueChanged(int)),ui.widget,SLOT(setAABBMinY(int)));
+    connect(ui.scrollBarAABBMaxY,SIGNAL(valueChanged(int)),ui.widget,SLOT(setAABBMaxY(int)));
+
+
     connect(ui.spinBoxArtVisc,SIGNAL(valueChanged(double)),ui.widget,SLOT(setArtVisc(double)));
     connect(ui.spinBoxArtVort,SIGNAL(valueChanged(double)),ui.widget,SLOT(setArtVort(double)));
     connect(ui.spinBoxCFM,SIGNAL(valueChanged(double)),ui.widget,SLOT(setCfmRegularization(double)));
@@ -100,5 +106,6 @@ void MainWindow::loadModel()
     if(!fileName.isEmpty())
     {
         ui.widget->loadModel(fileName);
+        setWindowTitle(QString("Position Based Fluids (#%0)").arg(ui.widget->getNumParticles()));
     }
 }

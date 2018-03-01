@@ -21,6 +21,7 @@ class GLCanvas : public QOpenGLWidget
 public:
     GLCanvas(QWidget* parent=0);
     void loadModel(QString fileName);
+    unsigned int getNumParticles();
 
 protected:
     void initializeGL();
@@ -33,6 +34,12 @@ protected:
     void keyReleaseEvent(QKeyEvent *event);
 protected slots:
     void reset();
+    void createParticleCube();
+
+    void setAABBMinX(int val);
+    void setAABBMaxX(int val);
+    void setAABBMinY(int val);
+    void setAABBMaxY(int val);
 
     void setNumIterations(int val);
     void setTimestep(double val);

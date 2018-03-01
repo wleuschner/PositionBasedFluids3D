@@ -5,6 +5,8 @@ AbstractSolver::AbstractSolver(std::vector<Particle>& particles,AbstractKernel* 
 {
     this->restDensity = 7440.0;
     this->iterations = 4;
+    bounds.min = glm::vec4(-2.0,-2.0,-2.0,0.0);
+    bounds.max = glm::vec4(2.0,2.0,2.0,0.0);
     this->densityKernel = densityKernel;
     this->gradKernel = gradKernel;
     this->viscKernel = viscKernel;

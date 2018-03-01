@@ -46,12 +46,24 @@ void GLCanvas::simulate()
     {
         makeCurrent();
         particles->bind();
-        solver->solve();
+        AABB oAABB = particles->getBounds();
+        glm::vec3 ext = oAABB.getExtent();
+        std::cout<<"("<<ext.x<<" "<<ext.y<<" "<<ext.z<<")"<<std::endl;
+        solver->solve(particles->getBounds());
 
         if(!gpu)
         {
             particles->upload();
         }
+        else
+        {
+            particles->syncGPU();
+            particles->updateBounds();
+        }
+
+        oAABB = particles->getBounds();
+        ext = oAABB.getExtent();
+        std::cout<<"("<<ext.x<<" "<<ext.y<<" "<<ext.z<<")"<<std::endl;
 
         if(record)
         {
@@ -459,14 +471,18 @@ void GLCanvas::renderSurface()
     glBindBuffer(GL_ARRAY_BUFFER,0);
 
     //Render Background
+    FrameBufferObject fbo4;
+    fbo4.bind();
+
     Texture bgImage;
     Texture bgDepthImage;
     bgImage.bind(0);
     bgImage.createRenderImage(this->width(),this->height());
+    bgImage.unbind(0);
     bgDepthImage.bind(1);
     bgDepthImage.createDepthImage(this->width(),this->height());
-    FrameBufferObject fbo4;
-    fbo4.bind();
+    bgDepthImage.unbind(1);
+
     fbo4.attachColorImage(bgImage,0);
     fbo4.attachDepthImage(bgDepthImage);
     fbo4.setRenderBuffer({GL_COLOR_ATTACHMENT0});
@@ -546,9 +562,9 @@ void GLCanvas::renderSurface()
         glDrawElements(GL_TRIANGLES,models[i]->getIndices().size(),GL_UNSIGNED_INT,(void*)0);
         glEnable(GL_CULL_FACE);
         //models[i]->draw(solidProgram);
-        glFinish();
     }
     fbo4.unbind();
+    QOpenGLFramebufferObject::bindDefault();
 
     //sphere->bind();
     //Vertex::setVertexAttribs();
@@ -561,10 +577,11 @@ void GLCanvas::renderSurface()
     glm::mat4 pvm = projection*modelView;
     glm::mat4 normalMatrix = glm::mat3(glm::transpose(glm::inverse((view*model))));
     FrameBufferObject fbo;
+    fbo.bind();
     Texture depthImage;
     depthImage.bind(0);
     depthImage.createDepthImage(this->width(),this->height());
-    fbo.bind();
+    depthImage.unbind(0);
     fbo.attachDepthImage(depthImage);
     fbo.setRenderBuffer({GL_NONE});
     if(!fbo.isComplete())
@@ -614,6 +631,7 @@ void GLCanvas::renderSurface()
     Texture smoothDepthImage;
     smoothDepthImage.bind(0);
     smoothDepthImage.createFloatRenderImage(this->width(),this->height());
+    smoothDepthImage.unbind(0);
     FrameBufferObject fbo2;
     glVertexAttribDivisor(0,0);
     glVertexAttribDivisor(1,0);
@@ -624,13 +642,14 @@ void GLCanvas::renderSurface()
     glEnableVertexAttribArray(2);
     glDisableVertexAttribArray(3);
     glDisableVertexAttribArray(4);
-    smoothProgram->bind();
     {
+        fbo2.bind();
         Texture tempImage;
         tempImage.bind(0);
         tempImage.createFloatRenderImage(this->width(),this->height());
+        tempImage.unbind(0);
+        smoothProgram->bind();
         smoothProgram->uploadInt("depthMap",0);
-        fbo2.bind();
         depthImage.bind(0);
         fbo2.attachColorImage(tempImage,0);
         fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
@@ -646,11 +665,13 @@ void GLCanvas::renderSurface()
         glDrawArrays(GL_TRIANGLES,0,6);
 
         //Blur Vertically
-        smoothProgram->uploadInt("depthMap",0);
         fbo2.bind();
-        tempImage.bind(0);
         fbo2.attachColorImage(smoothDepthImage,0);
         fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
+
+        smoothProgram->uploadInt("depthMap",0);
+        tempImage.bind(0);
+
         if(!fbo2.isComplete())
         {
             std::cout<<"FBO incomplete"<<std::endl;
@@ -662,12 +683,13 @@ void GLCanvas::renderSurface()
     }
     for(unsigned i=1;i<25;i++)
     {
+        fbo2.bind();
         Texture tempImage;
         tempImage.bind(0);
         tempImage.createFloatRenderImage(this->width(),this->height());
-        smoothProgram->uploadInt("depthMap",0);
+        tempImage.unbind(0);
 
-        fbo2.bind();
+        smoothProgram->uploadInt("depthMap",0);
         smoothDepthImage.bind(0);
         fbo2.attachColorImage(tempImage,0);
         fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
@@ -683,8 +705,8 @@ void GLCanvas::renderSurface()
         glDrawArrays(GL_TRIANGLES,0,6);
 
         //Blur Vertically
-        smoothProgram->uploadInt("depthMap",0);
         fbo2.bind();
+        smoothProgram->uploadInt("depthMap",0);
         tempImage.bind(0);
         fbo2.attachColorImage(smoothDepthImage,0);
         fbo2.setRenderBuffer({GL_COLOR_ATTACHMENT0});
@@ -707,8 +729,10 @@ void GLCanvas::renderSurface()
     Texture thicknessDepthImage;
     thicknessImage.bind(0);
     thicknessImage.createFloatRenderImage(this->width(),this->height());
+    thicknessImage.unbind(0);
     thicknessDepthImage.bind(1);
     thicknessDepthImage.createDepthImage(this->width(),this->height());
+    thicknessDepthImage.unbind(1);
     FrameBufferObject fbo3;
     fbo3.bind();
     fbo3.attachColorImage(thicknessImage,0);
@@ -725,6 +749,8 @@ void GLCanvas::renderSurface()
     thicknessProgram->uploadMat4("pvm",pvm);
     thicknessProgram->uploadMat4("view",view);
     thicknessProgram->uploadMat3("normalMatrix",normalMatrix);
+    thicknessProgram->uploadUnsignedInt("bgDepth",0);
+    bgDepthImage.bind(0);
     glDisable(GL_DEPTH_TEST);
     glEnable(GL_BLEND);
     glBlendFunc(GL_ONE,GL_ONE);
@@ -773,12 +799,14 @@ void GLCanvas::renderSurface()
     surfaceProgram->uploadInt("depthMap",0);
     surfaceProgram->uploadInt("thicknessMap",1);
     surfaceProgram->uploadInt("background",2);
-    surfaceProgram->uploadInt("skybox",3);
+    surfaceProgram->uploadInt("bgDephtImage",3);
+    surfaceProgram->uploadInt("skybox",4);
     surfaceProgram->uploadLight("light0",light,view);
-    smoothDepthImage.bind(0);
+    depthImage.bind(0);
     thicknessImage.bind(1);
     bgImage.bind(2);
-    skyBox->bind(3);
+    skyBox->bind(4);
+
 
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
     glDrawArrays(GL_TRIANGLES,0,6);
@@ -786,7 +814,7 @@ void GLCanvas::renderSurface()
 
 void GLCanvas::resizeGL(int w, int h)
 {
-    projection = glm::perspectiveFov(45.0f,(float)w,(float)h,0.1f,10.0f);
+    projection = glm::perspectiveFov(45.0f,(float)w,(float)h,0.1f,100.0f);
 }
 
 void GLCanvas::mousePressEvent(QMouseEvent *event)
@@ -901,6 +929,11 @@ void GLCanvas::keyReleaseEvent(QKeyEvent *event)
 void GLCanvas::reset()
 {
     particles->clear();
+    models.clear();
+}
+
+void GLCanvas::createParticleCube()
+{
     particles->bind();
     unsigned int cc = 0;
     //int ppu = 15;
@@ -952,6 +985,35 @@ void GLCanvas::loadModel(QString fileName)
         }
         delete parts;
     }
+}
+
+unsigned int GLCanvas::getNumParticles()
+{
+    return particles->getNumParticles();
+}
+
+void GLCanvas::setAABBMinX(int val)
+{
+    float aabbMinX = -val/256.0;
+    solver->setAABBMinX(aabbMinX);
+}
+
+void GLCanvas::setAABBMaxX(int val)
+{
+    float aabbMaxX = val/256.0;
+    solver->setAABBMaxX(aabbMaxX);
+}
+
+void GLCanvas::setAABBMinY(int val)
+{
+    float aabbMinY = -val/256.0;
+    solver->setAABBMinY(aabbMinY);
+}
+
+void GLCanvas::setAABBMaxY(int val)
+{
+    float aabbMaxY = val/256.0;
+    solver->setAABBMaxY(aabbMaxY);
 }
 
 void GLCanvas::setNumIterations(int val)

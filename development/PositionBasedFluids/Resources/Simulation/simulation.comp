@@ -72,7 +72,6 @@ layout (std430,binding=5) buffer incrBuffer
     uint incr[];
 };
 
-
 layout (std430,binding=3) buffer ofsBuffer
 {
     uint ofs[];
@@ -98,7 +97,7 @@ vec3 gradViscocity(vec3 r);
 uint beginIdx[9];
 uint endIdx[9];
 
-shared uint temp[32*256];
+shared uint temp[4*2048];
 
 void main()
 {
@@ -130,7 +129,7 @@ void main()
         {
             Particle pf = particlesFront[gId];
             vec3 posF = (pf.pos-minOfs)/kernelSupport;
-            ivec3 pos = clamp(ivec3(floor(posF)),ivec3(0),dimSize.x-ivec3(1));
+            ivec3 pos = clamp(ivec3(floor(posF)),ivec3(0),dimSize-ivec3(1));
             /*float xPosF = (pf.pos.x-minOfs.x)/kernelSupport;
             float yPosF = (pf.pos.y-minOfs.y)/kernelSupport;
             float zPosF = (pf.pos.z-minOfs.z)/kernelSupport;
@@ -151,12 +150,12 @@ void main()
             //lId = gId;
             int offset = 1;
             uint ai = lId;
-            uint bi = lId + (256/2);
+            uint bi = lId + (1024/2);
             uint bankOffsetA = ai/32;
             uint bankOffsetB = bi/32;
-            temp[ai+bankOffsetA] = histogram[ai+256*gl_WorkGroupID.x];
-            temp[bi+bankOffsetB] = histogram[bi+256*gl_WorkGroupID.x];
-            for(uint d=256>>1;d>0;d>>=1)
+            temp[ai+bankOffsetA] = histogram[ai+1024*gl_WorkGroupID.x];
+            temp[bi+bankOffsetB] = histogram[bi+1024*gl_WorkGroupID.x];
+            for(uint d=1024>>1;d>0;d>>=1)
             {
                 memoryBarrier();
                 barrier();
@@ -172,10 +171,10 @@ void main()
             }
             if(lId==0)
             {
-                sums[gl_WorkGroupID.x] = temp[256-1+((256-1)/32)];
-                temp[256-1+((256-1)/32)]=0;
+                sums[gl_WorkGroupID.x] = temp[1024-1+((1024-1)/32)];
+                temp[1024-1+((1024-1)/32)]=0;
             }
-            for(uint d=1;d<256;d*=2)
+            for(uint d=1;d<1024;d*=2)
             {
                 offset>>=1;
                 memoryBarrier();
@@ -193,8 +192,8 @@ void main()
             }
             memoryBarrier();
             barrier();
-            histogram[ai+(gl_WorkGroupID.x*256)] = temp[ai+bankOffsetA];
-            histogram[bi+(gl_WorkGroupID.x*256)] = temp[bi+bankOffsetB];
+            histogram[ai+(gl_WorkGroupID.x*1024)] = temp[ai+bankOffsetA];
+            histogram[bi+(gl_WorkGroupID.x*1024)] = temp[bi+bankOffsetB];
             /*uint acc=0;
             for(uint i=0;i<=nBuckets;i++)
             {
@@ -209,12 +208,12 @@ void main()
             uint lId = gl_LocalInvocationID.x;
             int offset = 1;
             uint ai = lId;
-            uint bi = lId + (256/2);
+            uint bi = lId + (1024/2);
             uint bankOffsetA = ai/32;
             uint bankOffsetB = bi/32;
             temp[ai+bankOffsetA] = sums[ai];
             temp[bi+bankOffsetB] = sums[bi];
-            for(uint d=256>>1;d>0;d>>=1)
+            for(uint d=1024>>1;d>0;d>>=1)
             {
                 memoryBarrier();
                 barrier();
@@ -230,9 +229,9 @@ void main()
             }
             if(lId==0)
             {
-                temp[256-1+((256-1)/32)]=0;
+                temp[1024-1+((1024-1)/32)]=0;
             }
-            for(uint d=1;d<256;d*=2)
+            for(uint d=1;d<1024;d*=2)
             {
                 offset>>=1;
                 memoryBarrier();
@@ -258,7 +257,7 @@ void main()
         {
             uint lId = gl_LocalInvocationID.x;
             uint wId = gl_WorkGroupID.x;
-            histogram[lId+((wId)*256)]+=incr[wId];
+            histogram[lId+((wId)*1024)]+=incr[wId];
             //histogram[lId+(gl_WorkGroupID.x+1)*512]+=incr[gl_WorkGroupID.x];
             break;
         }
@@ -287,7 +286,7 @@ void main()
                             density += kernelPoly6(p.tempPos-n.pos)*n.fluid*p.fluid;
                             vec3 grad = gradSpikey(p.tempPos-n.pos)*n.fluid*p.fluid;
                             gradSum1 += grad;
-                            grad = (invRestDensity*-gradSpikey(p.tempPos-n.pos))*n.fluid*p.fluid;
+                            grad = (invRestDensity*-grad)*n.fluid*p.fluid;
                             gradSum2 += dot(grad,grad);
                         }
                     }
@@ -297,7 +296,7 @@ void main()
             particles[gId].density = density;
             gradSum1 = invRestDensity*gradSum1;
             float gradSum = gradSum2+dot(gradSum1,gradSum1);
-            particles[gId].lambda = -density/(gradSum+cfmRegularization);
+            particles[gId].lambda = -max(density/(gradSum+cfmRegularization),0.0);
             break;
         }
     case 5:
@@ -431,61 +430,141 @@ void main()
 
 Particle checkBBoxCollision(Particle p)
 {
-    if(dot((p.tempPos+p.displacement),vec3(0.0,1.0,0.0))+aabbMaxY<0.0)
+    float d;
+    d = -dot(vec3(0.0,1.0,0.0),vec3(0.0,aabbMinY,0.0));
+    if(dot((p.tempPos+p.displacement),vec3(0.0,1.0,0.0))+d<0.0)
+    {
+        vec3 n1 = vec3(0.0,1.0,0.0);
+        vec3 r = -n1;
+        if(dot((p.pos),vec3(0.0,1.0,0.0))+d>=0.0)
+        {
+            r = normalize((p.tempPos+p.displacement)-p.pos);
+        }
+        float t = -(d+dot(n1,p.pos))/max(dot(n1,r),1.0);
+        p.displacement = p.displacement*p.solid+(p.pos+(r*t)-p.tempPos)*p.fluid;
+    }
+
+    d = -dot(vec3(0.0,-1.0,0.0),vec3(0.0,aabbMaxY,0.0));
+    if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+d<0.0)
+    {
+        vec3 n1 = vec3(0.0,-1.0,0.0);
+        vec3 r = -n1;
+        if(dot((p.pos),vec3(0.0,-1.0,0.0))+d>=0.0)
+        {
+            r = normalize((p.tempPos+p.displacement)-p.pos);
+        }
+        float t = -(d+dot(n1,p.pos))/max(dot(n1,r),1.0);
+        p.displacement = p.displacement*p.solid+(p.pos+(r*t)-p.tempPos)*p.fluid;
+    }
+
+    d = -dot(vec3(1.0,0.0,0.0),vec3(aabbMinX,0.0,0.0));
+    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+d<0.0)
+    {
+        vec3 n1 = vec3(1.0,0.0,0.0);
+        vec3 r = -n1;
+        if(dot((p.pos),vec3(1.0,0.0,0.0))+d>=0.0)
+        {
+            r = normalize((p.tempPos+p.displacement)-p.pos);
+        }
+        float t = -(d+dot(n1,p.pos))/dot(n1,r);
+        p.displacement = p.displacement*p.solid+(p.pos+(r*t)-p.tempPos)*p.fluid;
+    }
+
+    d = -dot(vec3(-1.0,0.0,0.0),vec3(aabbMaxX,0.0,0.0));
+    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+d<0.0)
+    {
+        vec3 n1 = vec3(-1.0,0.0,0.0);
+        vec3 r = -n1;
+        if(dot((p.pos),vec3(-1.0,0.0,0.0))+d>=0.0)
+        {
+            r = normalize((p.tempPos+p.displacement)-p.pos);
+        }
+        float t = -(d+dot(n1,p.pos))/dot(n1,r);
+        p.displacement = p.displacement*p.solid+(p.pos+(r*t)-p.tempPos)*p.fluid;
+    }
+
+    d = -dot(vec3(0.0,0.0,1.0),vec3(0.0,0.0,aabbMinZ));
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+d<0.0)
+    {
+        vec3 n1 = vec3(0.0,0.0,1.0);
+        vec3 r = -n1;
+        if(dot((p.pos),vec3(0.0,0.0,1.0))+d>=0.0)
+        {
+            r = normalize((p.tempPos+p.displacement)-p.pos);
+        }
+        float t = -(d+dot(n1,p.pos))/dot(n1,r);
+        p.displacement = p.displacement*p.solid+(p.pos+(r*t)-p.tempPos)*p.fluid;
+    }
+
+    d = -dot(vec3(0.0,0.0,-1.0),vec3(0.0,0.0,aabbMaxZ));
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+d<0.0)
+    {
+        vec3 n1 = vec3(0.0,0.0,-1.0);
+        vec3 r = -n1;
+        if(dot((p.pos),vec3(0.0,0.0,-1.0))+d>=0.0)
+        {
+            r = normalize((p.tempPos+p.displacement)-p.pos);
+        }
+        float t = -(d+dot(n1,p.pos))/dot(n1,r);
+        p.displacement = p.displacement*p.solid+(p.pos+(r*t)-p.tempPos)*p.fluid;
+    }
+    return p;
+    /*if(dot((p.tempPos+p.displacement),vec3(0.0,1.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,1.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(aabbMaxY+dot(n1,-aabbMaxY*n1))/dot(n1,r);
+        float t = -(1.0f+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))-aabbMinY<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,-1.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,-1.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(-aabbMinY+dot(n1,+aabbMinY*n1))/dot(n1,r);
+        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))-aabbMinX<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(-1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(-1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(-aabbMinX+dot(n1,+aabbMinX*n1))/dot(n1,r);
+        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+aabbMaxX<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(1.0,0.0,0.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(1.0,0.0,0.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(aabbMaxX+dot(n1,-aabbMaxX*n1))/dot(n1,r);
+        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))-aabbMinZ<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,-1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,-1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(-aabbMinZ+dot(n1,+aabbMinZ*n1))/dot(n1,r);
+        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
     }
-    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+aabbMaxZ<0.0)
+    if(dot((p.tempPos+p.displacement),vec3(0.0,0.0,1.0))+1.0f<0.0)
     {
         vec3 n1 = vec3(0.0,0.0,1.0);
         vec3 r = normalize((p.tempPos+p.displacement)-p.pos);
-        float t = -(aabbMaxZ+dot(n1,-aabbMaxZ*n1))/dot(n1,r);
+        float t = -(1.0+dot(n1,-1.0*n1))/dot(n1,r);
         p.displacement = p.pos+(r*t)-p.tempPos;
-    }
+    }*/
     return p;
+
 }
 
 void neighborInteraction(uint gId, Particle p)
 {
-    vec3 posF = (p.pos-minOfs)/kernelSupport;
-    ivec3 pos = clamp(ivec3(floor(posF)),ivec3(0),dimSize.x-ivec3(1));
+    vec3 posF = (p.tempPos-minOfs)/kernelSupport;
+    ivec3 pos = clamp(ivec3(floor(posF)),ivec3(0),dimSize-ivec3(1));
 
     int xPosBegin,xPosEnd;
     int yPosBegin,yPosEnd;
     int zPosBegin,zPosEnd;
 
-    ivec3 posBegin = max(pos-ivec3(1),0);
+    ivec3 posBegin = max(pos-ivec3(1),ivec3(0));
     ivec3 posEnd = min(pos+ivec3(1),dimSize-ivec3(1));
 
     ivec2 posBeginEndX = ivec2(posBegin.x,posEnd.x);
@@ -578,7 +657,7 @@ float kernelPoly6(vec3 r)
 {
     if(dot(r,r)==0)
     {
-        return 0;
+        return 0.0;
     }
     return (315.0/(64*M_PI*pow(kernelSupport,9)))*pow((kernelSupport*kernelSupport-dot(r,r)),3);
 }
@@ -587,7 +666,7 @@ float kernelSpikey(vec3 r)
 {
     if(dot(r,r)==0)
     {
-        return 0;
+        return 0.0;
     }
     return (15.0/(M_PI*pow(kernelSupport,6)))*pow((kernelSupport-length(r)),3);
 }
@@ -596,7 +675,7 @@ float kernelViscocity(vec3 r)
 {
     if(dot(r,r)==0)
     {
-        return 0;
+        return 0.0;
     }
     float rl = length(r);
     return -(pow(rl,3)/(2*pow(kernelSupport,3)))+(pow(rl,2)/(pow(kernelSupport,2)))+(kernelSupport/(2*rl));
