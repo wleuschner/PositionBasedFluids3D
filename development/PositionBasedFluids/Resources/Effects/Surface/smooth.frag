@@ -9,9 +9,9 @@ uniform sampler2D depthMap;
 
 uniform mat4 view;
 uniform vec2 blurDir;
+uniform sampler2D bgDepthMap;
 
 in vec2 fragTexCoord;
-layout(location=0) out vec4 fragColor;
 
 /*
 float gaussianScale = 1.0;
@@ -39,6 +39,7 @@ float gaussian[] = {0.27901,0.44198,0.27901};
 float gaussianScale = 1.0;
 float gaussian[] = {0.000489,0.002403,0.009246,0.027840,0.065602,0.120999,0.174697,0.197448,0.174697,0.120999,0.065602,0.027840,0.009246,0.002403,0.000489};
 */
+
 /*
 float gaussianScale = 1.0;
 float gaussian[] = {0.000003,0.000006,0.000012,0.000023,0.000044,0.000081,0.000147,0.00026,0.000446,0.000745,0.001211,0.001913,0.002939,0.004393,0.006386,0.00903,0.012419,0.016614,0.021618,0.02736,0.033681,0.040329,0.046969,0.053207,0.058627,0.062833,0.0655,0.066414,0.0655,0.062833,0.058627,0.053207,0.046969,0.040329,0.033681,0.02736,0.021618,0.016614,0.012419,0.00903,0.006386,0.004393,0.002939,0.001913,0.001211,0.000745,0.000446,0.00026,0.000147,0.000081,0.000044,0.000023,0.000012,0.000006,0.000003};
@@ -81,5 +82,12 @@ void main()
 {
     vec2 dxTex = vec2(1.0,1.0)/textureSize(depthMap,0);
     float val = convolve(fragTexCoord,dxTex);
-    fragColor = vec4(val,val,val,val);
+    float depth = texture(bgDepthMap,fragTexCoord,0).x;
+    //gl_FragDepth = val;
+    if(val>depth)
+    {
+        discard;
+        return;
+    }
+    gl_FragDepth = val;
 }

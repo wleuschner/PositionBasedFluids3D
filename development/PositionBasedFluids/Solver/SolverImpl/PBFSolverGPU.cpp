@@ -225,12 +225,12 @@ void PBFSolverGPU::setAABBMaxX(float val)
 
 void PBFSolverGPU::setAABBMinY(float val)
 {
-    bounds.min.y = val;
+    bounds.min.z = val;
 }
 
 void PBFSolverGPU::setAABBMaxY(float val)
 {
-    bounds.max.y = val;
+    bounds.max.z = val;
 }
 
 void PBFSolverGPU::setDensityKernel(int id)

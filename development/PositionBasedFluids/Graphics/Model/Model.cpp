@@ -211,6 +211,7 @@ ParticleBuffer* Model::voxelize(float particleSize,bool solid)
     texArray.bind(0);
     /*ext.x/particleSize,ext.y/particleSize,((ext.z/32)/particleSize)*/
     texArray.createRenderArray(width,height,layers);
+    texArray.unbind(0);
     //texArray.createRenderArray(10,10,512);
 
     fbo.bind();

@@ -8,7 +8,7 @@ class PlacementDialog : public QDialog
 {
     Q_OBJECT
 public:
-    PlacementDialog();
+    PlacementDialog(QWidget* parent=0);
     glm::vec3 getDisplacement();
     bool isSolid();
 private:

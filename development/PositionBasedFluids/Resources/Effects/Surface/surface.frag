@@ -14,6 +14,7 @@ uniform float vpHeight;
 uniform sampler2D depthMap;
 uniform sampler2D thicknessMap;
 uniform sampler2D background;
+uniform sampler2D bgDepthMap;
 uniform samplerCube skybox;
 
 uniform mat4 view;
@@ -40,12 +41,18 @@ void main()
     vec2 dxTex = vec2(1.0,1.0)/textureSize(depthMap,0);
 
     float depth = texture(depthMap,fragTexCoord).x;
+    float bgDepth = texture(bgDepthMap,fragTexCoord).x;
 
-    if(depth>=1.0)
+    if(depth>=bgDepth)
     {
         fragColor = vec4(texture(background,fragTexCoord).xyz,1.0);
         return;
     }
+/*    if(depth>=1.0)
+    {
+        fragColor = vec4(texture(background,fragTexCoord).xyz,1.0);
+        return;
+    }*/
     vec3 eyePos = getEyePos(fragTexCoord,depth);
 
     vec3 ddx = getEyePos(fragTexCoord+vec2(dxTex.x,0.0),texture(depthMap,fragTexCoord+vec2(dxTex.x,0.0)).x)-eyePos;
@@ -79,14 +86,11 @@ void main()
     {
         spec = max(pow(dot(N,H),50.0),0.0);
     }
-    //vec3 reflectionCol = vec3(0.0,0.0,0.7);
+
     vec3 reflectionCol = texture(skybox,normalize(reflect(-N,V))).xyz;
     vec3 bgCol = texture(background,fragTexCoord+N.xy*d).xyz;
-    //bgCol = vec3(0.0,0.0,0.0);
     vec3 c_fluid = mix(vec3(0.4,0.499,0.998),bgCol,exp(vec3(0.4,0.499,0.998)*-d));
-    /*c_fluid.r = mix(1.0,bgCol.r,exp(0.40*-d));
-    c_fluid.g = mix(1.0,bgCol.g,exp(0.499*-d));
-    c_fluid.b = mix(1.0,bgCol.b,exp(0.998*-d));*/
 
+    gl_FragDepth = depth;
     fragColor = clamp(vec4(RTheta*reflectionCol+(1.0-RTheta)*c_fluid+vec3(1.0,1.0,1.0)*spec,1.0),vec4(0.0,0.0,0.0,1.0),vec4(1.0,1.0,1.0,1.0));
 }

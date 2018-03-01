@@ -1,6 +1,6 @@
 #include"PlacementDialog.h"
 
-PlacementDialog::PlacementDialog()
+PlacementDialog::PlacementDialog(QWidget* parent) : QDialog(parent)
 {
     ui.setupUi(this);
 }
