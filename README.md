@@ -1,4 +1,6 @@
-The code in this repository implements the Position Based Fluids algorithm from Miles Macklin andMatthias MÃ¼ller using Qt, OpenGL 4.4. To run the application, an OpenGL 4.4 capable graphics card is needed. Further the following packages need to be installed:
+[![PBF](http://img.youtube.com/vi/znnvtUs5be8/0.jpg)](https://www.youtube.com/watch?v=znnvtUs5be8 "PBF")
+
+The code in this repository implements the Position Based Fluids algorithm from Miles Macklin andMatthias Müller using Qt, OpenGL 4.4. To run the application, an OpenGL 4.4 capable graphics card is needed. Further the following packages need to be installed:
 
     Qt (>=5.0)
     OpenGL (>=4.4)
