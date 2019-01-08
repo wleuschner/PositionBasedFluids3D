@@ -1,13 +1,20 @@
 cmake_minimum_required(VERSION 2.8.8)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -march=native")
-add_definitions(-DGLM_FORCE_SSE2 -DGLM_FORCE_ALIGNED)
+add_definitions(-DQT_NO_OPENGL_ES_2 -DGLM_FORCE_SSE2 -DGLM_FORCE_ALIGNED -DGLM_ENABLE_EXPERIMENTAL)
 #set(CMAKE_AUTOMOC ON)
 #set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 project(PositionBasedFluids)
+
+#find_package(Qt4 REQUIRED)
+#include(${QT_USE_FILE})
+#add_definitions( ${QT_DEFINITIONS} )
+#include_directories( ${CMAKE_BINARY_DIR} )
+
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+
 
 find_package(Qt5Core)
 find_package(Qt5Gui)
@@ -49,7 +56,9 @@ find_package (GLEW REQUIRED)
 find_package(OpenGL)
 find_package(assimp)
 qt5_use_modules(${PROJECT_NAME} Widgets OpenGL Core Gui)
+#target_link_libraries(${PROJECT_NAME} ${QT_QTCORE_LIBRARY} ${QT_QTGUI_LIBRARY} ${QT_QTOPENGL_LIBRARY} ${QT_QTWIDGETS_LIBRARY} ${OPENGL_gl_LIBRARY} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES} assimp)
 target_link_libraries(${PROJECT_NAME} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES} assimp)
+
 
 set (source ${CMAKE_SOURCE_DIR}/Resources)
 set (destination ${CMAKE_CURRENT_BINARY_DIR}/Resources)

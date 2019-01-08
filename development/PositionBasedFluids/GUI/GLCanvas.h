@@ -1,6 +1,6 @@
 #include<GL/glew.h>
 #include<QTimer>
-#include<QOpenGLWidget>
+#include<QtOpenGL/QGLWidget>
 #include<glm/glm.hpp>
 #include"../Graphics/Shader/Shader.h"
 #include"../Graphics/ShaderProgram/ShaderProgram.h"
@@ -15,13 +15,15 @@
 
 
 
-class GLCanvas : public QOpenGLWidget
+class GLCanvas : public QGLWidget
 {
     Q_OBJECT
 public:
     GLCanvas(QWidget* parent=0);
     void loadModel(QString fileName);
     unsigned int getNumParticles();
+    void start();
+    void stop();
 
 protected:
     void initializeGL();
@@ -79,7 +81,7 @@ private:
     AbstractSolver* solver;
     std::vector<AbstractKernel*> kernels;
 
-    QSurfaceFormat format;
+    QGLFormat format;
     Camera camera;
     ShaderProgram* skyBoxProgram;
     ShaderProgram* particleProgram;

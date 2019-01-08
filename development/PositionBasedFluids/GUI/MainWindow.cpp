@@ -102,10 +102,12 @@ void MainWindow::saveParameters()
 
 void MainWindow::loadModel()
 {
+    ui.widget->stop();
     QString fileName = QFileDialog::getOpenFileName(this);
     if(!fileName.isEmpty())
     {
         ui.widget->loadModel(fileName);
         setWindowTitle(QString("Position Based Fluids (#%0)").arg(ui.widget->getNumParticles()));
     }
+    ui.widget->start();
 }

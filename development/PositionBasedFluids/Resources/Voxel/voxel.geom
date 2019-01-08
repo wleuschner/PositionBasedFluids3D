@@ -13,11 +13,13 @@ out VertexData {
     vec3 normal;
 } VertexOut;
 
+uniform float zOffset;
+
 void main()
 {
     for(int i = 0;i < gl_in.length();i++)
     {
-        gl_Layer = int(floor(gl_in[i].gl_Position.z/(32*4*particleSize*2)));
+        gl_Layer = int(floor((gl_in[i].gl_Position.z+zOffset)/(32*4*particleSize*2)));
         gl_Position = gl_in[i].gl_Position;
         VertexOut.normal = VertexIn[i].normal;
         VertexOut.pos = vec3(gl_in[i].gl_Position);

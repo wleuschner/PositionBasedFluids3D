@@ -30,7 +30,7 @@ public:
     std::vector<unsigned int>& getIndices();
 
     void setModelMat(const glm::mat4& mat);
-    const glm::mat4& getModelMat();
+    glm::mat4 getModelMat();
 
 
     //Primitives

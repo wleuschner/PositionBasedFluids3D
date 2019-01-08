@@ -2,6 +2,8 @@
 uniform usampler2DArray sliceMap;
 uniform float particleSize;
 uniform float sliceSize;
+uniform float zOffset;
+
 
 in VertexData {
     flat vec3 pos;
@@ -14,7 +16,7 @@ void main()
 {
     //discard;
     //float slice = gl_Layer*particleSize*32*4;
-    uint z = uint(((VertexIn.pos.z))/(particleSize*2));
+    uint z = uint(((VertexIn.pos.z+zOffset))/(particleSize*2));
     //texture(sliceMap,vec3(gl_FragCoord.x,gl_FragCoord.y,gl_Layer))
     uvec4 c = uvec4(0);
 

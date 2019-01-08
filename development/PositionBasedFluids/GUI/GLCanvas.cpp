@@ -1,7 +1,7 @@
 #include"GLCanvas.h"
 #include<QKeyEvent>
 #include<QMouseEvent>
-#include<QOpenGLFramebufferObject>
+#include<QtOpenGL/QGLFramebufferObject>
 
 #include<glm/gtc/matrix_transform.hpp>
 #include<iostream>
@@ -16,8 +16,9 @@
 
 #include"PlacementDialog.h"
 
-GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
+GLCanvas::GLCanvas(QWidget* parent) : QGLWidget(parent)
 {
+    model = glm::mat4(1.0f);
     surface = false;
     smoothIter = 1;
     particleSize = 0.03;
@@ -27,10 +28,9 @@ GLCanvas::GLCanvas(QWidget* parent) : QOpenGLWidget(parent)
     step = false;
     record = false;
     gpu = false;
-    format = QSurfaceFormat::defaultFormat();
-    format.setProfile(QSurfaceFormat::CoreProfile);
-    format.setMajorVersion(4);
-    format.setMinorVersion(5);
+    format = QGLFormat::defaultFormat();
+    format.setProfile(QGLFormat::CoreProfile);
+    format.setVersion(4,5);
     setFormat(format);
     makeCurrent();
 
@@ -60,9 +60,9 @@ void GLCanvas::simulate()
 
         if(record)
         {
-            QImage screenshot = grabFramebuffer();
+/*            QImage screenshot = grabFramebuffer();
             screenshot.save(QString("Screenshot")+QString::number(screenshotNo)+QString(".png"),"png");
-            screenshotNo++;
+            screenshotNo++;*/
         }
         step = false;
     }
@@ -73,6 +73,7 @@ void GLCanvas::simulate()
 void GLCanvas::initializeGL()
 {
     glewInit();
+    makeCurrent();
 
     updateTimer.setInterval(1000.0/60);
     updateTimer.setSingleShot(false);
@@ -95,7 +96,7 @@ void GLCanvas::initializeGL()
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-    glEnable(GL_CULL_FACE);
+    glDisable(GL_CULL_FACE);
 
     glEnable(GL_PROGRAM_POINT_SIZE);
 
@@ -294,7 +295,7 @@ void GLCanvas::initializeGL()
     //armadillo->load("Resources/Models/Armadillo.obj");
     //armadillo->bind();
     //particles = armadillo->voxelize(particleSize);
-    QOpenGLFramebufferObject::bindDefault();
+    QGLFramebufferObject::bindDefault();
 
 
 
@@ -401,7 +402,7 @@ void GLCanvas::paintGL()
 
 void GLCanvas::renderParticles()
 {
-    glDepthMask(GL_FALSE);
+    QGLFramebufferObject::bindDefault();
     cube->bind();
     Vertex::setVertexAttribs();
     Vertex::enableVertexAttribs();
@@ -414,6 +415,7 @@ void GLCanvas::renderParticles()
     skyBoxProgram->uploadInt("cube_texture",0);
     skyBox->bind(0);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glDepthMask(GL_FALSE);
     glDrawArrays(GL_TRIANGLES, 0, 36);
     glDepthMask(GL_TRUE);
 
@@ -454,7 +456,6 @@ void GLCanvas::renderParticles()
     particleProgram->uploadVec3("cPos",camera.getPosition());
     particleProgram->uploadLight("light0",light,view);
     glDrawElementsInstanced(GL_TRIANGLES,sphere->getIndices().size(),GL_UNSIGNED_INT,0,particles->getNumParticles());
-
 }
 
 void GLCanvas::renderSurface()
@@ -509,9 +510,9 @@ void GLCanvas::renderSurface()
     glClearColor(0.0,0.0,0.0,1.0);
     glClearDepth(1.0);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-    glDisable(GL_DEPTH_TEST);
+    glDepthMask(GL_FALSE);
     glDrawArrays(GL_TRIANGLES, 0, 36);
-    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
     glDepthFunc(GL_LEQUAL);
     //cube->bind();
     //glClear();
@@ -554,7 +555,7 @@ void GLCanvas::renderSurface()
     }
     CubeMap::unbind(0);
     fbo4.unbind();
-    QOpenGLFramebufferObject::bindDefault();
+    QGLFramebufferObject::bindDefault();
 
     //sphere->bind();
     //Vertex::setVertexAttribs();
@@ -847,7 +848,7 @@ void GLCanvas::renderSurface()
     fbo3.unbind();
 
     //Qt5 Hack to restore framebuffer
-    QOpenGLFramebufferObject::bindDefault();
+    QGLFramebufferObject::bindDefault();
 
     glBindBuffer(GL_ARRAY_BUFFER,0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,0);
@@ -1035,9 +1036,9 @@ void GLCanvas::loadModel(QString fileName)
         model->load(fileName.toStdString());
         glm::vec3 transl = dialog.getDisplacement();
         bool solid = dialog.isSolid();
-        model->setModelMat(glm::translate(glm::mat4(),transl));
+        model->setModelMat(glm::translate(glm::mat4(1.0f),transl));
         ParticleBuffer *parts = model->voxelize(particleSize,solid);
-        QOpenGLFramebufferObject::bindDefault();
+        QGLFramebufferObject::bindDefault();
         if(gpu)
         {
             particles->syncGPU();
@@ -1051,6 +1052,7 @@ void GLCanvas::loadModel(QString fileName)
         {
             delete model;
         }
+        glDisable(GL_CULL_FACE);
         delete parts;
     }
 }
@@ -1058,6 +1060,16 @@ void GLCanvas::loadModel(QString fileName)
 unsigned int GLCanvas::getNumParticles()
 {
     return particles->getNumParticles();
+}
+
+void GLCanvas::start()
+{
+    updateTimer.start();
+}
+
+void GLCanvas::stop()
+{
+    updateTimer.stop();
 }
 
 void GLCanvas::setAABBMinX(int val)

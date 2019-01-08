@@ -283,20 +283,20 @@ void main()
                     {
                         if(dot(p.tempPos-n.pos,p.tempPos-n.pos)<=kernelSupport*kernelSupport)
                         {
-                            density += kernelPoly6(p.tempPos-n.pos)*n.fluid*p.fluid;
-                            vec3 grad = gradSpikey(p.tempPos-n.pos)*n.fluid*p.fluid;
+                            density += kernelPoly6(p.tempPos-n.pos)*n.fluid*p.fluid+8*kernelPoly6(p.tempPos-n.pos)*n.solid*p.fluid;
+                            vec3 grad = gradSpikey(p.tempPos-n.pos);
                             gradSum1 += grad;
-                            grad = (invRestDensity*-grad)*n.fluid*p.fluid;
+                            grad = (invRestDensity*-grad);
                             gradSum2 += dot(grad,grad);
                         }
                     }
                 }
             }
-            density = (invRestDensity*density)-1.0;
+            density = max((invRestDensity*density)-1.0,0.0);
             particles[gId].density = density;
             gradSum1 = invRestDensity*gradSum1;
             float gradSum = gradSum2+dot(gradSum1,gradSum1);
-            particles[gId].lambda = -max(density/(gradSum+cfmRegularization),0.0);
+            particles[gId].lambda = -density/(gradSum+cfmRegularization);
             break;
         }
     case 5:
@@ -332,7 +332,7 @@ void main()
             vec3 tempDispl = p.displacement;
 
 
-
+/*
             neighborInteraction(gId,p);
 
             for(uint i=0;i<9;i++)
@@ -360,7 +360,7 @@ void main()
                         }
                     }
                 }
-            }
+            }*/
             p.displacement = tempDispl;
             particles[gId] = checkBBoxCollision(p);
             break;

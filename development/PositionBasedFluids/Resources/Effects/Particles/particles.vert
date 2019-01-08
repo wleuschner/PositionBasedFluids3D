@@ -34,7 +34,7 @@ void main()
 {
     vec4 diff;
     //More Than Resting Density RED
-    if(solid==0.0)
+    if(true/*solid==0.0*/)
     {
         if(dens>0.0)
         {

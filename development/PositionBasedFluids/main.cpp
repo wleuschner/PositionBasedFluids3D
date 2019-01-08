@@ -5,12 +5,11 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
-    QSurfaceFormat format;
-    format = QSurfaceFormat::defaultFormat();
-    format.setProfile(QSurfaceFormat::CoreProfile);
-    format.setMajorVersion(4);
-    format.setMinorVersion(5);
-    QSurfaceFormat::setDefaultFormat(format);
+    QGLFormat format;
+    format = QGLFormat::defaultFormat();
+    format.setProfile(QGLFormat::CoreProfile);
+    format.setVersion(4,5);
+    QGLFormat::setDefaultFormat(format);
     QApplication app(argc,argv);
     MainWindow mainwindow;
     mainwindow.show();
